@@ -104,6 +104,14 @@ describe('weeklySummary', () => {
   })
 })
 
+describe('weeklySummary notes', () => {
+  it('keeps a multi-line note on one bullet', () => {
+    const f = fixture()
+    f.workouts = f.workouts.map((w) => (w.id === 'w31' ? { ...w, notes: 'Felt strong\n\n  Knee a bit tight' } : w))
+    expect(weeklySummary(f, W44, GEN)).toContain('- Sat 31 Oct: "Felt strong Knee a bit tight"')
+  })
+})
+
 describe('weeklySummary with an empty week', () => {
   it('says so and omits the other sections', () => {
     const md = weeklySummary({ ...fixture(), workouts: [], sets: [], cardio: [], bodyweight: [] }, W44, GEN)

@@ -22,7 +22,7 @@ import Picker from './Picker'
 import FinishSheet from './FinishSheet'
 import TechniqueSheet from './TechniqueSheet'
 import { nextSet, type NextSet } from '../nextSet'
-import { formatRest, restState, type Rest } from '../rest'
+import { formatRest, restState, REST_AFTER_EXERCISE, type Rest } from '../rest'
 import { cardFolded } from '../fold'
 
 type Props = { workoutId: string; onDone: () => void }
@@ -94,9 +94,11 @@ export default function Workout({ workoutId, onDone }: Props) {
 
   // Every change is written straight to the database: there is no Save button.
   function saveRow(row: SetRow) {
+    // Ticking a set again lets a card that was tapped open fold once more; rating a
+    // finished exercise (RPE or pain chips) saves a row that was already ticked.
+    const justTicked = !!row.completedAt && !sets.find((s) => s.id === row.id)?.completedAt
     setSets((prev) => prev.map((s) => (s.id === row.id ? row : s)))
-    // Ticking a set again lets a card that was tapped open fold once more.
-    if (row.completedAt) setPinnedOpen((p) => p.filter((id) => id !== row.exerciseId))
+    if (justTicked) setPinnedOpen((p) => p.filter((id) => id !== row.exerciseId))
     db.sets.put(row)
   }
 
@@ -354,7 +356,7 @@ function UpNextDock({
 }) {
   const [pop, setPop] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
-  const drinkUp = rest?.target === 120
+  const drinkUp = rest?.target === REST_AFTER_EXERCISE
   const kind = `${!up || !ex ? 'done' : 'up'}${drinkUp ? '-drink' : ''}`
 
   // The page's bottom padding follows the dock's real height, which changes between states.
@@ -413,7 +415,7 @@ function UpNextDock({
 
   if ((!up || !ex) && rest && drinkUp) {
     return (
-      <div className={`dock resting drink${rest.over ? ' over' : ''}`} ref={rootRef}>
+      <div className={`dock resting${rest.over ? ' over' : ''}`} ref={rootRef}>
         <div className="dock-body">
           <div className="dock-kicker">{rest.over ? 'Rest · over' : 'Rest · drink up'}</div>
           <div className="dock-time num">{formatRest(rest.remaining)}</div>

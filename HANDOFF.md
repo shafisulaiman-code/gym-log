@@ -1,6 +1,6 @@
 # Handoff
 
-Status as of 2026-10-31 (night): **Phase 2 is built** (rest timer, effort and pain chips, weekly summary), committed on `main` in seven commits after `98755d4` (the last Phase 1 state), **NOT yet phone-tested and NOT pushed**. The eight acceptance checks in `docs/superpowers/specs/2026-10-31-phase2-design.md` are the phone test; push only after Shafi reports it passed, because a push to `main` deploys the live site. Verified before the handoff commit: `npm test` (15 files, 133 tests), `npx tsc --noEmit`, and `npm run build` (precache still lists the font and the visuals). Phase 1 is built, redesigned, expanded (53 exercises) and **deployed to GitHub Pages** at https://shafisulaiman-code.github.io/gym-log/ after Shafi's phone click-through passed. Every push to `main` redeploys via `.github/workflows/deploy.yml`. The **airplane-mode acceptance test** in PLAN.md **passed** on Shafi's Android phone (Chrome, installed from the Pages link) on 31 Oct 2026: a workout logged offline and present after reconnecting. The one issue it surfaced, the outlet suggestion not returning after airplane mode, is fixed (`src/locate.ts`: a quick cached try, then a patient high-accuracy try, re-asked on foreground or network return).
+Status as of 2026-10-31 (night): **Phase 2 is built** (rest timer, effort and pain chips, weekly summary), committed on `main` in the Phase 2 commits after `98755d4` (the last Phase 1 state), **NOT yet phone-tested and NOT pushed**. The eight acceptance checks in `docs/superpowers/specs/2026-10-31-phase2-design.md` are the phone test; push only after Shafi reports it passed, because a push to `main` deploys the live site. Verified before the handoff commit: `npm test` (15 files, 133 tests), `npx tsc --noEmit`, and `npm run build` (precache still lists the font and the visuals). Phase 1 is built, redesigned, expanded (53 exercises) and **deployed to GitHub Pages** at https://shafisulaiman-code.github.io/gym-log/ after Shafi's phone click-through passed. Every push to `main` redeploys via `.github/workflows/deploy.yml`. The **airplane-mode acceptance test** in PLAN.md **passed** on Shafi's Android phone (Chrome, installed from the Pages link) on 31 Oct 2026: a workout logged offline and present after reconnecting. The one issue it surfaced, the outlet suggestion not returning after airplane mode, is fixed (`src/locate.ts`: a quick cached try, then a patient high-accuracy try, re-asked on foreground or network return).
 
 ## What was built (Phase 1 + redesign)
 
@@ -54,7 +54,7 @@ Everkinetic line drawings (CC BY-SA 3.0, via Wikimedia Commons), two frames per 
 - One dark theme; no light mode.
 - IDs use a small UUID helper rather than `crypto.randomUUID`, so the app also works over plain-http Wi-Fi during testing.
 - Phase 2: adding an exercise during the drink-up does not restart the count; the countdown follows the last tick.
-- Phase 2: Back / Knee is a radio (one choice, tap again to clear) because `painFlag` has one slot; RPE is a separate row of chips.
+- Phase 2: Back / Knee is a radio (one choice, tap again to clear) because `painFlag` has one slot; the RPE chips and the Back/Knee chips share one scrolling row, split by a divider.
 - Phase 2: Finish leaves the dock only during the drink-up window (the dock shows "+ Exercise" instead); the "Finish workout" button at the bottom of the page is always there, and the dock's Finish returns once the display hides.
 - Phase 2: the rest display hides at target + 5 minutes. No wake lock, no sound, no notification.
 - Phase 2: the weekly file states kg once in the header, and its heading uses "machine" for cables too (e.g. "### Lat Pulldown (Orchard Gateway machine)"). Machines and cables are keyed per outlet, so the same machine at two outlets never mixes; everything else is keyed by exercise.
@@ -62,7 +62,7 @@ Everkinetic line drawings (CC BY-SA 3.0, via Wikimedia Commons), two frames per 
 
 ## Still to do
 
-1. Phone-test Phase 2 against the spec's eight acceptance checks (dev server: `npm run dev`, phone at the LAN address with `/gym-log/`; clipboard and downloads are blocked over plain http, so check the weekly file's Copy and Share on the deployed site). Push to `main` only after Shafi says it passed.
+1. Phone-test Phase 2 against the spec's eight acceptance checks (dev server: `npm run dev`, phone at the LAN address with `/gym-log/`; clipboard and downloads are blocked over plain http, and the weekly file's Share needs https, so that part of acceptance check 6 can only be confirmed on the deployed site after the push; Copy and the file text can be checked over the LAN URL beforehand). Push to `main` only after Shafi says it passed.
 2. Known small gaps for a later pass (none blocks the phone test):
    - The Knee chip sits just off the right edge of the chip row at 412 px wide; the row scrolls.
    - `WeeklySheet` can show one frame of "Last week" on reopening after it was selected, before the reset to "This week".

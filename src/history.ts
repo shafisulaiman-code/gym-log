@@ -123,8 +123,8 @@ export function formatLast(ex: Exercise, last: SetRow[]): string {
 }
 
 // The weekly summary's form of one session: no units (kg is stated once in the
-// file's header), "ph" for per hand, timed sets as seconds with no load.
-// e.g. "100 × 12, 12, 10", "14 ph × 10", "BW+10 × 12", "45s", "100×12, 105×10", "14 ph×10, 16 ph×8"
+// file's header), "ph" for per hand, timed sets as seconds (with the load when there is one).
+// e.g. "100 × 12, 12, 10", "14 ph × 10", "BW+10 × 12", "45s", "24 × 45s, 45s", "100×12, 105×10", "14 ph×10, 16 ph×8"
 export function formatSession(ex: Exercise, rows: SetRow[]): string {
   return loadText(ex, rows, { units: false })
 }
@@ -138,7 +138,7 @@ function loadText(ex: Exercise, rows: SetRow[], { units }: { units: boolean }): 
   const count = (s: SetRow) => (timed ? `${fmt(s.durationSec ?? 0)}s` : fmt(s.reps ?? 0))
   const load = (w: number | undefined) => {
     if (ex.loadMode === 'bodyweight_plus') return w ? `BW+${fmt(w)}${units ? ' kg' : ''}` : 'BW'
-    if (w === undefined || (timed && !units)) return ''
+    if (w === undefined) return ''
     if (units || ex.loadMode === 'height_cm') return `${fmt(w)} ${loadUnit(ex)}`
     return ex.loadMode === 'per_hand' ? `${fmt(w)} ph` : fmt(w)
   }
@@ -146,7 +146,7 @@ function loadText(ex: Exercise, rows: SetRow[], { units }: { units: boolean }): 
   // In the summary form, bodyweight plus with no weight and with 0 are the same "BW".
   const same = (w: number | undefined) => (!units && ex.loadMode === 'bodyweight_plus' ? (w ?? 0) : w)
   const weights = new Set(working.map((s) => same(s.weightKg)))
-  if (weights.size === 1 || (timed && !units)) {
+  if (weights.size === 1) {
     const l = load(working[0].weightKg)
     const counts = working.map(count).join(', ')
     return l ? `${l} × ${counts}` : counts

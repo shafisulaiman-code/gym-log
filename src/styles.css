@@ -272,7 +272,7 @@ h3,
 
 .chip.warn.selected {
   background: var(--warn);
-  color: #2a2416;
+  color: var(--warn-bg);
 }
 
 .chip.more {
@@ -1354,12 +1354,6 @@ button.card.folded {
 .dock.over .dock-time,
 .dock.over .dock-kicker {
   color: var(--warn);
-}
-
-.dock.resting .dock-meta {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* Drink-up: after the last set of an exercise. A chip row for effort and pain sits under

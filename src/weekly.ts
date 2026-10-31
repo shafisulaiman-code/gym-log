@@ -211,6 +211,6 @@ function bodyweight(ctx: Ctx): string | null {
 function notes(ctx: Ctx): string | null {
   const lines = ctx.thisWeek
     .filter((w) => w.notes && w.notes.trim() !== '')
-    .map((w) => `- ${dayLabel(dateOf(w.startedAt))}: "${w.notes!.trim()}"`)
+    .map((w) => `- ${dayLabel(dateOf(w.startedAt))}: "${w.notes!.trim().replace(/\s*\n+\s*/g, ' ')}"`)
   return lines.length > 0 ? `## Notes\n${lines.join('\n')}` : null
 }

@@ -163,6 +163,7 @@ describe('ratingOf and the Last suffix', () => {
 const dbBench: Exercise = { ...legPress, id: 'db-bench', name: 'Dumbbell Bench Press', equipmentType: 'dumbbell', loadMode: 'per_hand' }
 const pushUp: Exercise = { ...legPress, id: 'bw-push-up', name: 'Push-up', equipmentType: 'bodyweight', loadMode: 'bodyweight_plus' }
 const plank: Exercise = { ...legPress, id: 'core-plank', name: 'Plank', equipmentType: 'bodyweight', loadMode: 'timed' }
+const carry: Exercise = { ...legPress, id: 'kb-carry', name: 'Kettlebell Carry', equipmentType: 'kettlebell', loadMode: 'timed' }
 
 describe('formatSession', () => {
   const w = (weightKg: number, reps: number): SetRow => ({ ...last[1], id: `s${weightKg}${reps}`, weightKg, reps })
@@ -176,6 +177,7 @@ describe('formatSession', () => {
     expect(formatSession(pushUp, [{ ...w(10, 12), exerciseId: pushUp.id }])).toBe('BW+10 × 12')
     expect(formatSession(boxJump, [{ ...w(60, 5), exerciseId: boxJump.id }])).toBe('60 cm × 5')
     expect(formatSession(plank, [{ ...last[1], exerciseId: plank.id, weightKg: undefined, reps: undefined, durationSec: 45 }])).toBe('45s')
+    expect(formatSession(carry, [{ ...last[1], exerciseId: carry.id, weightKg: 24, reps: undefined, durationSec: 45 }, { ...last[1], exerciseId: carry.id, weightKg: 24, reps: undefined, durationSec: 45 }])).toBe('24 × 45s, 45s')
   })
   it('keeps the load markers when weights differ', () => {
     expect(formatSession(dbBench, [{ ...w(14, 10), exerciseId: dbBench.id }, { ...w(16, 8), exerciseId: dbBench.id }])).toBe('14 ph×10, 16 ph×8')
