@@ -1,6 +1,6 @@
 # Handoff
 
-Status as of 2026-10-31 (evening): Phase 1 is built, redesigned, expanded (53 exercises) and **deployed to GitHub Pages** at https://shafisulaiman-code.github.io/gym-log/ after Shafi's phone click-through passed. Every push to `main` redeploys via `.github/workflows/deploy.yml`. The **airplane-mode acceptance test** in PLAN.md (installed PWA, offline) has **not been run yet**.
+Status as of 2026-10-31 (evening): Phase 1 is built, redesigned, expanded (53 exercises) and **deployed to GitHub Pages** at https://shafisulaiman-code.github.io/gym-log/ after Shafi's phone click-through passed. Every push to `main` redeploys via `.github/workflows/deploy.yml`. The **airplane-mode acceptance test** in PLAN.md **passed** on Shafi's Android phone (Chrome, installed from the Pages link) on 31 Oct 2026: a workout logged offline and present after reconnecting. The one issue it surfaced, the outlet suggestion not returning after airplane mode, is fixed (`src/locate.ts`: a quick cached try, then a patient high-accuracy try, re-asked on foreground or network return).
 
 ## What was built (Phase 1 + redesign)
 
@@ -46,5 +46,4 @@ Everkinetic line drawings (CC BY-SA 3.0, via Wikimedia Commons), two frames per 
 
 ## Still to do
 
-1. **Acceptance test** on the phone in airplane mode as an installed PWA, per PLAN.md: open the Pages link in Safari, Share, Add to Home Screen, open it once online so the service worker precaches, then airplane mode and log a workout.
-2. Later: drawings for the 21 uncovered exercises (another CC source, or commissioned in the same style); a paid animation pack only if the sheet earns its place.
+1. Later: drawings for the 21 uncovered exercises (another CC source, or commissioned in the same style); a paid animation pack only if the sheet earns its place.
