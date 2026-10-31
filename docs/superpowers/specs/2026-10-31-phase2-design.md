@@ -1,6 +1,6 @@
 # Phase 2: rest timer, effort and pain on the set, weekly summary
 
-Date: 2026-10-31. Status: draft for Shafi's approval. Nothing here is built yet. Builds on PLAN.md and the two Phase 1 specs in this folder; where this document is silent, those apply.
+Date: 2026-10-31. Status: approved by Shafi on 31 Oct 2026. Nothing here is built yet. Builds on PLAN.md and the two Phase 1 specs in this folder; where this document is silent, those apply.
 
 ## Intent
 
