@@ -39,4 +39,10 @@ describe('makeOutlet', () => {
   it('returns null for a blank name', () => {
     expect(makeOutlet('   ', { lat: 1, lng: 1 })).toBeNull()
   })
+  it('saves a gym by name alone when the phone has no position', () => {
+    const o = makeOutlet('AF Bedok', null)
+    expect(o).toMatchObject({ name: 'AF Bedok' })
+    expect(o).not.toHaveProperty('lat')
+    expect(o).not.toHaveProperty('lng')
+  })
 })

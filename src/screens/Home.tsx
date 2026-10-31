@@ -156,9 +156,9 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
             {shortOutlet(o.name)}
           </button>
         ))}
-        {here && !nearId && !active && (
+        {!nearId && !active && (
           <button type="button" className="chip add-gym" onClick={() => setAddingGym(true)}>
-            + Add this gym
+            + Add gym
           </button>
         )}
       </div>
@@ -210,14 +210,12 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
           load()
         }}
       />
-      {here && (
-        <AddOutletSheet
-          open={addingGym}
-          here={here}
-          onClose={() => setAddingGym(false)}
-          onSaved={gymAdded}
-        />
-      )}
+      <AddOutletSheet
+        open={addingGym}
+        here={here}
+        onClose={() => setAddingGym(false)}
+        onSaved={gymAdded}
+      />
     </div>
   )
 }

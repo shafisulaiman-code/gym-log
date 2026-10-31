@@ -429,6 +429,7 @@ h3,
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-bottom: 10px;
 }
 
 .ex-head .ex-title {
@@ -539,10 +540,6 @@ h3,
   border-top: 1px solid var(--line);
   border-radius: 14px;
   transition: background-color var(--t-fast), opacity var(--t-fast);
-}
-
-.set-row:first-of-type {
-  margin-top: 10px;
 }
 
 .set-controls {
@@ -1040,8 +1037,20 @@ h3,
 
 /* Picker: muscle chip row under the search field */
 .muscle-chips {
-  margin: 0 0 12px;
+  margin: 12px 0;
   flex-wrap: nowrap;
+}
+
+/* On a phone the chip row bleeds to the screen edges so a clipped chip
+   signals there is more to scroll, instead of stopping at the padding. */
+@media (max-width: 512px) {
+  .overlay > .muscle-chips {
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
+    scroll-padding-inline: 16px;
+  }
 }
 
 .muscle-chips .chip {

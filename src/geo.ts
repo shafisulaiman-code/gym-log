@@ -30,10 +30,11 @@ export function nearestOutlet(
   return best
 }
 
-// A new outlet for a gym not in the seed, pinned to where the phone is now so
-// it is recognised next visit. Null when the name is blank.
-export function makeOutlet(name: string, here: LatLng): Outlet | null {
+// A new outlet for a gym not in the seed. With a position it is pinned to where
+// the phone is now so it is recognised next visit; without one (location off,
+// or an insecure origin) it is saved by name alone. Null when the name is blank.
+export function makeOutlet(name: string, here: LatLng | null): Outlet | null {
   const trimmed = name.trim()
   if (!trimmed) return null
-  return { id: uuid(), name: trimmed, lat: here.lat, lng: here.lng }
+  return here ? { id: uuid(), name: trimmed, lat: here.lat, lng: here.lng } : { id: uuid(), name: trimmed }
 }
