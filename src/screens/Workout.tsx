@@ -20,6 +20,7 @@ import Picker from './Picker'
 import FinishSheet from './FinishSheet'
 import TechniqueSheet from './TechniqueSheet'
 import { nextSet, type NextSet } from '../nextSet'
+import { cardFolded } from '../fold'
 
 type Props = { workoutId: string; onDone: () => void }
 
@@ -35,6 +36,8 @@ export default function Workout({ workoutId, onDone }: Props) {
   const [finishing, setFinishing] = useState(false)
   const [techniqueFor, setTechniqueFor] = useState<Exercise | null>(null)
   const [now, setNow] = useState(Date.now())
+  // Cards whose every set is ticked fold to one line; a tap pins one open.
+  const [pinnedOpen, setPinnedOpen] = useState<string[]>([])
 
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 1000)
@@ -81,6 +84,8 @@ export default function Workout({ workoutId, onDone }: Props) {
   // Every change is written straight to the database: there is no Save button.
   function saveRow(row: SetRow) {
     setSets((prev) => prev.map((s) => (s.id === row.id ? row : s)))
+    // Ticking a set again lets a card that was tapped open fold once more.
+    if (row.completedAt) setPinnedOpen((p) => p.filter((id) => id !== row.exerciseId))
     db.sets.put(row)
   }
 
@@ -207,6 +212,28 @@ export default function Workout({ workoutId, onDone }: Props) {
         const rows = sets.filter((s) => s.exerciseId === exId)
         const eq = rows[0].equipmentId ? equipment[rows[0].equipmentId] : undefined
         let working = 0
+        if (cardFolded(rows, pinnedOpen.includes(exId))) {
+          const text = formatLast(ex, rows).replace(/^Last: /, '')
+          return (
+            <button
+              type="button"
+              className="card folded"
+              key={exId}
+              id={`card-${exId}`}
+              onClick={() => setPinnedOpen((p) => [...p, exId])}
+              aria-label={`${ex.name} done, tap to expand`}
+            >
+              <Thumb ex={ex} size={44} />
+              <span className="folded-body">
+                <b>{ex.name}</b>
+                <span>{text}</span>
+              </span>
+              <i className="folded-mark" aria-hidden="true">
+                ✓
+              </i>
+            </button>
+          )
+        }
         return (
           <section className="card" key={exId} id={`card-${exId}`}>
             <div className="ex-head">
