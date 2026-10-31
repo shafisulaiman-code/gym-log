@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { distanceKm, nearestOutlet } from './geo'
+import { distanceKm, makeOutlet, nearestOutlet } from './geo'
 import type { Outlet } from './types'
 
 const TW = { lat: 1.3448, lng: 103.9382 }
@@ -27,5 +27,16 @@ describe('nearestOutlet', () => {
   })
   it('ignores outlets without coordinates', () => {
     expect(nearestOutlet([noCoords], { lat: 1.3448, lng: 103.9382 })).toBeNull()
+  })
+})
+
+describe('makeOutlet', () => {
+  it('builds an outlet with a trimmed name and the current coordinates', () => {
+    const o = makeOutlet('  Hotel gym KL ', { lat: 3.15, lng: 101.71 })
+    expect(o).toMatchObject({ name: 'Hotel gym KL', lat: 3.15, lng: 101.71 })
+    expect(o!.id).toMatch(/^[0-9a-f-]{20,}$/)
+  })
+  it('returns null for a blank name', () => {
+    expect(makeOutlet('   ', { lat: 1, lng: 1 })).toBeNull()
   })
 })

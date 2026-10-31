@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { db, findActiveWorkout } from '../db'
 import ExportSheet from './ExportSheet'
+import AddOutletSheet from './AddOutletSheet'
 import type { Outlet, Workout } from '../types'
 import { nearestOutlet, type LatLng } from '../geo'
 import { getLastOutlet, minutesBetween, setLastOutlet, sgIso, shortOutlet, uuid } from '../util'
@@ -36,6 +37,7 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
   const [exporting, setExporting] = useState(false)
   const [here, setHere] = useState<LatLng | null>(null)
   const [nearId, setNearId] = useState<string | null>(null)
+  const [addingGym, setAddingGym] = useState(false)
   // Once Shafi taps an outlet himself, the suggestion never overrides it.
   const touched = useRef(false)
 
@@ -101,6 +103,16 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
     setPast(rows)
   }
 
+  // A gym Shafi just named: it becomes the selected, nearby outlet at once.
+  function gymAdded(o: Outlet) {
+    setAddingGym(false)
+    touched.current = true
+    setOutlets((prev) => [...prev, o])
+    setNearId(o.id)
+    setOutletId(o.id)
+    setLastOutlet(o.id)
+  }
+
   function chooseOutlet(id: string) {
     touched.current = true
     setOutletId(id)
@@ -147,6 +159,11 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
             {shortOutlet(o.name)}
           </button>
         ))}
+        {here && !nearId && !active && (
+          <button type="button" className="chip add-gym" onClick={() => setAddingGym(true)}>
+            + Add this gym
+          </button>
+        )}
       </div>
 
       <button type="button" className="btn primary huge" onClick={start} style={{ marginTop: 16 }}>
@@ -187,6 +204,14 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
       </button>
 
       <ExportSheet open={exporting} onClose={() => setExporting(false)} />
+      {here && (
+        <AddOutletSheet
+          open={addingGym}
+          here={here}
+          onClose={() => setAddingGym(false)}
+          onSaved={gymAdded}
+        />
+      )}
     </div>
   )
 }

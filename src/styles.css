@@ -1062,6 +1062,13 @@ h3,
   box-shadow: none;
 }
 
+/* Offered when the phone is somewhere none of the outlets are */
+.chip.add-gym {
+  background: transparent;
+  border: 1.5px dashed var(--outline);
+  color: var(--muted);
+}
+
 /* Up next dock: the next unticked set and one big ✓, fixed above the thumb.
    z-index sits above the sticky header (5) and below sheets and overlays (10+). */
 .screen.workout {

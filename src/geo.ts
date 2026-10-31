@@ -1,4 +1,5 @@
 import type { Outlet } from './types'
+import { uuid } from './util'
 
 export type LatLng = { lat: number; lng: number }
 
@@ -27,4 +28,12 @@ export function nearestOutlet(
     if (km <= NEAR_KM && (!best || km < best.km)) best = { outlet: o, km }
   }
   return best
+}
+
+// A new outlet for a gym not in the seed, pinned to where the phone is now so
+// it is recognised next visit. Null when the name is blank.
+export function makeOutlet(name: string, here: LatLng): Outlet | null {
+  const trimmed = name.trim()
+  if (!trimmed) return null
+  return { id: uuid(), name: trimmed, lat: here.lat, lng: here.lng }
 }
