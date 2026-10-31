@@ -44,6 +44,8 @@ export async function buildExport() {
             r: s.reps,
             s: s.durationSec,
             warmup: s.isWarmup,
+            rpe: s.rpe,
+            pain: s.painFlag,
             completedAt: s.completedAt,
           })),
         })),

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { countSets, prefillRows, formatLast, loadUnit, knownRows } from './history'
+import { countSets, prefillRows, formatLast, loadUnit, knownRows, ratingOf } from './history'
 import type { Equipment, Exercise, SetRow } from './types'
 
 export const legPress: Exercise = {
@@ -133,5 +133,29 @@ describe('knownRows', () => {
     const keep = heightSet({ exerciseId: boxJump.id })
     const orphan = heightSet({ exerciseId: 'm-pec-fly-rear-delt' })
     expect(knownRows([orphan, keep], { [boxJump.id]: boxJump })).toEqual([keep])
+  })
+})
+
+describe('ratingOf and the Last suffix', () => {
+  const t = (s: number) => `2026-10-31T10:0${s}:00+08:00`
+  it('returns nothing when no row is rated', () => {
+    expect(ratingOf(last)).toEqual({})
+    expect(formatLast(legPress, last)).toBe('Last: 100 kg × 12')
+  })
+  it('takes the latest rated completed row', () => {
+    const rows: SetRow[] = [
+      { ...last[1], id: 'x', completedAt: t(1), rpe: 7 },
+      { ...last[1], id: 'y', completedAt: t(2), rpe: 8, painFlag: 'back' },
+      { ...last[1], id: 'z', completedAt: t(3) },
+    ]
+    expect(ratingOf(rows)).toEqual({ rpe: 8, pain: 'back' })
+    expect(formatLast(legPress, rows)).toBe('Last: 100 kg × 12, 12, 12 · 8/10 · back')
+  })
+  it('shows pain without effort and effort without pain', () => {
+    expect(formatLast(legPress, [{ ...last[1], painFlag: 'knee' }])).toBe('Last: 100 kg × 12 · knee')
+    expect(formatLast(legPress, [{ ...last[1], rpe: 9 }])).toBe('Last: 100 kg × 12 · 9/10')
+  })
+  it('ignores a rating on an unticked row', () => {
+    expect(ratingOf([{ ...last[1], completedAt: undefined, rpe: 9 }])).toEqual({})
   })
 })

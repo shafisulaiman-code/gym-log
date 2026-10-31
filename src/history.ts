@@ -94,9 +94,33 @@ export function knownRows(rows: SetRow[], exercises: Record<string, Exercise>): 
   return rows.filter((r) => exercises[r.exerciseId])
 }
 
-// e.g. "Last: 60 kg × 12, 12, 10" or "Last: 60×12, 65×10"
+export type Rating = { rpe?: number; pain?: 'back' | 'knee' }
+
+// The effort and pain recorded at the end of an exercise: from the latest
+// completed row that carries either one (seq breaks completedAt ties).
+export function ratingOf(rows: SetRow[]): Rating {
+  let best: SetRow | undefined
+  for (const r of rows) {
+    if (!r.completedAt || (r.rpe === undefined && r.painFlag === undefined)) continue
+    if (!best || r.completedAt > best.completedAt! || (r.completedAt === best.completedAt && r.seq > best.seq)) {
+      best = r
+    }
+  }
+  if (!best) return {}
+  const out: Rating = {}
+  if (best.rpe !== undefined) out.rpe = best.rpe
+  if (best.painFlag !== undefined) out.pain = best.painFlag
+  return out
+}
+
+// e.g. "Last: 60 kg × 12, 12, 10 · 8/10 · back" or "Last: 60×12, 65×10"
 export function formatLast(ex: Exercise, last: SetRow[]): string {
   if (last.length === 0) return 'Last: —'
+  const { rpe, pain } = ratingOf(last)
+  return lastText(ex, last) + (rpe !== undefined ? ` · ${rpe}/10` : '') + (pain ? ` · ${pain}` : '')
+}
+
+function lastText(ex: Exercise, last: SetRow[]): string {
   const working = last.filter((s) => !s.isWarmup)
   if (working.length === 0) return 'Last: warm-up only'
 

@@ -308,6 +308,8 @@ export default function Workout({ workoutId, onDone }: Props) {
           onTick={() => up && tick(up.row)}
           onJump={() => up && jumpTo(up.row.exerciseId)}
           onFinish={() => setFinishing(true)}
+          onAddExercise={() => setPicking(true)}
+          onRate={(patch) => rest && saveRow({ ...rest.row, ...patch })}
         />
       )}
 
@@ -338,6 +340,8 @@ function UpNextDock({
   onTick,
   onJump,
   onFinish,
+  onAddExercise,
+  onRate,
 }: {
   up: NextSet | null
   ex?: Exercise
@@ -345,10 +349,13 @@ function UpNextDock({
   onTick: () => void
   onJump: () => void
   onFinish: () => void
+  onAddExercise: () => void
+  onRate: (patch: Pick<SetRow, 'rpe' | 'painFlag'>) => void
 }) {
   const [pop, setPop] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
-  const kind = !up || !ex ? 'done' : 'up'
+  const drinkUp = rest?.target === 120
+  const kind = `${!up || !ex ? 'done' : 'up'}${drinkUp ? '-drink' : ''}`
 
   // The page's bottom padding follows the dock's real height, which changes between states.
   useEffect(() => {
@@ -369,6 +376,56 @@ function UpNextDock({
     [],
   )
 
+  const chips = drinkUp && rest && (
+    <div className="chip-row scroll dock-chips" aria-label="How hard was that exercise">
+      {[6, 7, 8, 9, 10].map((n) => {
+        const on = rest.row.rpe === n
+        return (
+          <button
+            key={n}
+            type="button"
+            className={`chip${on ? ' selected' : ''}`}
+            aria-pressed={on}
+            aria-label={`Effort ${n} out of 10`}
+            onClick={() => onRate({ rpe: on ? undefined : n })}
+          >
+            {n}
+          </button>
+        )
+      })}
+      <i className="dock-chips-sep" aria-hidden="true" />
+      {(['back', 'knee'] as const).map((p) => {
+        const on = rest.row.painFlag === p
+        return (
+          <button
+            key={p}
+            type="button"
+            className={`chip warn${on ? ' selected' : ''}`}
+            aria-pressed={on}
+            onClick={() => onRate({ painFlag: on ? undefined : p })}
+          >
+            {p === 'back' ? 'Back' : 'Knee'}
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  if ((!up || !ex) && rest && drinkUp) {
+    return (
+      <div className={`dock resting drink${rest.over ? ' over' : ''}`} ref={rootRef}>
+        <div className="dock-body">
+          <div className="dock-kicker">{rest.over ? 'Rest · over' : 'Rest · drink up'}</div>
+          <div className="dock-time num">{formatRest(rest.remaining)}</div>
+          <div className="dock-meta">Then add the next exercise</div>
+        </div>
+        <button type="button" className="btn primary dock-add" onClick={onAddExercise}>
+          + Exercise
+        </button>
+        {chips}
+      </div>
+    )
+  }
   if (!up || !ex) {
     return (
       <div className="dock done" ref={rootRef}>
@@ -400,7 +457,7 @@ function UpNextDock({
         {rest ? (
           <>
             <div className="dock-kicker">
-              {rest.over ? 'Rest · over' : rest.target === 120 ? 'Rest · drink up' : 'Rest'}
+              {rest.over ? 'Rest · over' : drinkUp ? 'Rest · drink up' : 'Rest'}
             </div>
             <div className="dock-time num">{formatRest(rest.remaining)}</div>
             <div className="dock-meta">
@@ -428,6 +485,7 @@ function UpNextDock({
       >
         ✓
       </button>
+      {chips}
     </div>
   )
 }
@@ -435,12 +493,28 @@ function UpNextDock({
 // "Last: 100 kg × 12, 12, 10" with the load in --text and the rest muted.
 function LastLine({ text }: { text?: string }) {
   if (!text) return null
-  const body = text.replace(/^Last: /, '')
+  let body = text.replace(/^Last: /, '')
+  const m = body.match(/ · (back|knee)$/)
+  if (m) body = body.slice(0, m.index)
+  const pain = m && (
+    <>
+      {' · '}
+      <span className="pain">{m[1]}</span>
+    </>
+  )
   const i = body.indexOf(' × ')
-  if (i === -1) return <div className="last-line">Last {body}</div>
+  if (i === -1) {
+    return (
+      <div className="last-line">
+        Last {body}
+        {pain}
+      </div>
+    )
+  }
   return (
     <div className="last-line">
       Last <b>{body.slice(0, i)}</b> × {body.slice(i + 3)}
+      {pain}
     </div>
   )
 }

@@ -37,6 +37,7 @@ class GymDB extends Dexie {
     // v2: SetRow.ghost, Exercise.cues, Exercise.visualId and visualFrames added. No
     // index changes, no data to migrate (nothing in production yet); the bump records
     // the change. Seed rows removed from seed.json are pruned in setupDb().
+    // SetRow.rpe added 2026-10-31: no index, no version bump.
     this.version(2).stores({
       outlets: 'id',
       exercises: 'id, category',

@@ -68,6 +68,7 @@ export interface SetRow {
   reps?: number
   durationSec?: number
   rir?: number
+  rpe?: number // 6 to 10, set once per exercise from the drink-up dock
   painFlag?: 'back' | 'knee'
   completedAt?: string
   seq: number // creation order, used to order cards and rows

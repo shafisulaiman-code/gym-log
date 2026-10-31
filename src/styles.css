@@ -270,6 +270,11 @@ h3,
   color: var(--accent-text);
 }
 
+.chip.warn.selected {
+  background: var(--warn);
+  color: #2a2416;
+}
+
 .chip.more {
   color: var(--muted);
   letter-spacing: 0.12em;
@@ -491,6 +496,10 @@ h3,
 .last-line b {
   color: var(--text);
   font-weight: 700;
+}
+
+.last-line .pain {
+  color: var(--warn);
 }
 
 .ex-note {
@@ -1345,6 +1354,28 @@ button.card.folded {
   text-overflow: ellipsis;
 }
 
+/* Drink-up: after the last set of an exercise. A chip row for effort and pain sits under
+   the countdown, spanning the dock; + Exercise takes the ✓'s place when nothing is left. */
+.dock-add {
+  min-height: var(--tap);
+  padding: 0 18px;
+  border-radius: 18px;
+}
+
+.dock-chips {
+  grid-column: 1 / -1;
+  margin: 2px -8px 0 -16px;
+  padding: 0 8px 0 16px;
+}
+
+.dock-chips-sep {
+  width: 1px;
+  height: 32px;
+  background: var(--outline);
+  flex: none;
+  align-self: center;
+}
+
 .dock-check.ring {
   position: relative;
 }
@@ -1355,7 +1386,11 @@ button.card.folded {
   inset: -5px;
   padding: 3px;
   border-radius: 24px;
-  background: conic-gradient(var(--accent) calc(var(--ring, 1) * 360deg), transparent 0);
+  background: conic-gradient(
+    from calc((1 - var(--ring, 1)) * 360deg),
+    var(--accent) calc(var(--ring, 1) * 360deg),
+    transparent 0
+  );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
