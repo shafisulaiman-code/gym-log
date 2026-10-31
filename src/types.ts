@@ -1,4 +1,5 @@
-export type LoadMode = 'total' | 'per_hand' | 'bodyweight_plus' | 'timed'
+// height_cm: reps against a box height; weightKg holds centimetres.
+export type LoadMode = 'total' | 'per_hand' | 'bodyweight_plus' | 'timed' | 'height_cm'
 
 export type EquipmentType =
   | 'kettlebell'

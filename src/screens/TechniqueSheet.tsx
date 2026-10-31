@@ -12,6 +12,8 @@ function loadPill(ex: Exercise): string | null {
       return '+ kg'
     case 'timed':
       return 'seconds'
+    case 'height_cm':
+      return 'cm'
     default:
       return null
   }

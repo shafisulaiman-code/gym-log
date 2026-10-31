@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { countSets, prefillRows, formatLast } from './history'
+import { countSets, prefillRows, formatLast, loadUnit } from './history'
 import type { Equipment, Exercise, SetRow } from './types'
 
 export const legPress: Exercise = {
@@ -67,5 +67,45 @@ describe('countSets', () => {
     ]
     expect(countSets(rows)).toEqual({ done: 1, total: 2 })
     expect(countSets([])).toEqual({ done: 0, total: 0 })
+  })
+})
+
+export const boxJump: Exercise = {
+  ...legPress,
+  id: 'plyo-box-jump',
+  name: 'Box Jump',
+  category: 'Plyo',
+  primaryMuscles: ['quads', 'glutes'],
+  equipmentType: 'bodyweight',
+  loadMode: 'height_cm',
+  defaultIncrementKg: 5,
+  repRange: [3, 6],
+  backCaution: false,
+}
+
+const heightSet = (patch: Partial<SetRow>): SetRow => ({
+  id: `h${Math.random()}`,
+  workoutId: 'w1',
+  exerciseId: boxJump.id,
+  setIndex: 0,
+  isWarmup: false,
+  seq: 1,
+  completedAt: '2026-10-31T10:00:00+08:00',
+  ...patch,
+})
+
+describe('height_cm', () => {
+  it('prefills a box jump at 50 cm × 10 when there is no history', () => {
+    const [row] = prefillRows(boxJump, undefined, 'w1', [])
+    expect(row.weightKg).toBe(50)
+    expect(row.reps).toBe(10)
+  })
+  it('formats height sets in cm', () => {
+    const rows = [heightSet({ weightKg: 60, reps: 5 }), heightSet({ weightKg: 60, reps: 4 })]
+    expect(formatLast(boxJump, rows)).toBe('Last: 60 cm × 5, 4')
+  })
+  it('loadUnit is cm only for height_cm', () => {
+    expect(loadUnit(boxJump)).toBe('cm')
+    expect(loadUnit(legPress)).toBe('kg')
   })
 })

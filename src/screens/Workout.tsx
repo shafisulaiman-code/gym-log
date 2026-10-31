@@ -7,6 +7,7 @@ import {
   getOrCreateEquipment,
   keyedByEquipment,
   lastSession,
+  loadUnit,
   prefillRows,
   weightStep,
 } from '../history'
@@ -451,7 +452,7 @@ function SetRowView({
             <Stepper
               value={row.weightKg ?? 0}
               step={step}
-              unit="kg"
+              unit={loadUnit(ex)}
               prefix={bodyweight ? '+' : ''}
               onChange={(v) => edit({ weightKg: v ?? 0 })}
             />

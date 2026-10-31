@@ -9,7 +9,7 @@ export function volumeKg(rows: SetRow[], exercises: Record<string, Exercise>): n
     if (!r.completedAt || r.isWarmup) continue
     if (r.weightKg === undefined || r.reps === undefined) continue
     const ex = exercises[r.exerciseId]
-    if (!ex || ex.loadMode === 'timed') continue
+    if (!ex || ex.loadMode === 'timed' || ex.loadMode === 'height_cm') continue
     const perSet = ex.loadMode === 'per_hand' ? r.weightKg * 2 : r.weightKg
     total += perSet * r.reps
   }

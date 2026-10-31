@@ -38,6 +38,11 @@ export async function lastSession(
   return done.filter((s) => s.workoutId === latest.workoutId).sort((a, b) => a.seq - b.seq)
 }
 
+// Unit of the load field: centimetres for box height, kilograms otherwise.
+export function loadUnit(ex: Exercise): 'kg' | 'cm' {
+  return ex.loadMode === 'height_cm' ? 'cm' : 'kg'
+}
+
 export function weightStep(ex: Exercise, eq?: Equipment): number {
   const step = eq?.stackStepKg ?? ex.defaultIncrementKg
   return step > 0 ? step : 2.5
@@ -69,6 +74,8 @@ export function prefillRows(
     row.weightKg = kettlebellSizesKg[1]
   } else if (ex.loadMode === 'bodyweight_plus') {
     row.weightKg = 0
+  } else if (ex.loadMode === 'height_cm') {
+    row.weightKg = 50
   } else if (ex.equipmentType !== 'bodyweight') {
     row.weightKg = eq?.stackStartKg ?? ex.defaultIncrementKg
   }
@@ -91,7 +98,7 @@ export function formatLast(ex: Exercise, last: SetRow[]): string {
   const load = (w: number | undefined) => {
     if (ex.loadMode === 'bodyweight_plus') return w ? `BW+${fmt(w)} kg` : 'BW'
     if (w === undefined) return ''
-    return `${fmt(w)} kg`
+    return `${fmt(w)} ${loadUnit(ex)}`
   }
 
   const weights = new Set(working.map((s) => s.weightKg))

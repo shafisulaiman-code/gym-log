@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { volumeKg, summarize } from './summary'
 import type { Exercise, SetRow } from './types'
-import { legPress } from './history.test'
+import { legPress, boxJump } from './history.test'
 
 const base: Omit<Exercise, 'id' | 'name' | 'equipmentType' | 'loadMode'> = {
   category: 'x',
@@ -53,6 +53,13 @@ describe('volumeKg', () => {
 
   it('counts added kg on bodyweight-plus', () => {
     expect(volumeKg([done(pushUp.id, { weightKg: 10, reps: 10 })], ex)).toBe(100)
+  })
+})
+
+describe('volumeKg height_cm', () => {
+  it('excludes height_cm exercises from volume', () => {
+    const rows = [done(legPress.id, { weightKg: 100, reps: 10 }), done(boxJump.id, { weightKg: 60, reps: 5 })]
+    expect(volumeKg(rows, { [legPress.id]: legPress, [boxJump.id]: boxJump })).toBe(1000)
   })
 })
 
