@@ -4,6 +4,7 @@ import ExportSheet from './ExportSheet'
 import AddOutletSheet from './AddOutletSheet'
 import SessionSheet from './SessionSheet'
 import { CARDIO_LABELS } from '../sessionDetail'
+import { locate } from '../locate'
 import type { Outlet, Workout } from '../types'
 import { nearestOutlet, type LatLng } from '../geo'
 import { getLastOutlet, minutesBetween, setLastOutlet, sgIso, shortOutlet, uuid } from '../util'
@@ -40,14 +41,28 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
 
   useEffect(() => {
     load()
-    // One low-power fix, happy with anything from the last five minutes. Any
-    // failure (denied, offline GPS, desktop) just means no suggestion.
-    navigator.geolocation?.getCurrentPosition(
-      (pos) => setHere({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => {},
-      { maximumAge: 300_000, timeout: 8_000, enableHighAccuracy: false },
-    )
   }, [])
+
+  // Find the phone's position until we have one: on open, and again when the
+  // app comes back to the foreground or the network returns (after airplane
+  // mode the first try usually times out). Denied permission ends it; any
+  // other failure just means no suggestion yet.
+  useEffect(() => {
+    if (here) return
+    let cancel = locate(navigator.geolocation, setHere)
+    const again = () => {
+      if (document.visibilityState !== 'visible') return
+      cancel()
+      cancel = locate(navigator.geolocation, setHere)
+    }
+    document.addEventListener('visibilitychange', again)
+    window.addEventListener('online', again)
+    return () => {
+      cancel()
+      document.removeEventListener('visibilitychange', again)
+      window.removeEventListener('online', again)
+    }
+  }, [here])
 
   // Preselect the outlet you are standing in, unless a workout is already open
   // there or you have chosen one by hand.
