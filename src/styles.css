@@ -931,6 +931,14 @@ h3,
   color: var(--muted);
 }
 
+.seg.two {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.seg.two button {
+  min-height: var(--tap);
+}
+
 .seg button.on {
   background: var(--raised-active);
   color: var(--text);

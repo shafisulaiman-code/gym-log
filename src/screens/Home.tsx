@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { db, findActiveWorkout } from '../db'
 import ExportSheet from './ExportSheet'
+import WeeklySheet from './WeeklySheet'
 import AddOutletSheet from './AddOutletSheet'
 import SessionSheet from './SessionSheet'
 import { CARDIO_LABELS } from '../sessionDetail'
@@ -32,6 +33,7 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
   const [active, setActive] = useState<Workout | undefined>()
   const [past, setPast] = useState<PastRow[]>([])
   const [exporting, setExporting] = useState(false)
+  const [weekly, setWeekly] = useState(false)
   const [here, setHere] = useState<LatLng | null>(null)
   const [nearId, setNearId] = useState<string | null>(null)
   const [addingGym, setAddingGym] = useState(false)
@@ -206,16 +208,17 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
         ))
       )}
 
-      <button
-        type="button"
-        className="btn secondary wide"
-        onClick={() => setExporting(true)}
-        style={{ marginTop: 24 }}
-      >
-        Export JSON
-      </button>
+      <div className="two-up" style={{ marginTop: 24 }}>
+        <button type="button" className="btn secondary" onClick={() => setWeekly(true)}>
+          Weekly summary
+        </button>
+        <button type="button" className="btn secondary" onClick={() => setExporting(true)}>
+          Export JSON
+        </button>
+      </div>
 
       <ExportSheet open={exporting} onClose={() => setExporting(false)} />
+      <WeeklySheet open={weekly} onClose={() => setWeekly(false)} />
       <SessionSheet
         workout={viewing}
         outletName={shortOutlet(outlets.find((o) => o.id === viewing?.outletId)?.name ?? '')}

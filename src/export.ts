@@ -1,6 +1,8 @@
 import { db } from './db'
 import type { Bodyweight, CardioSession, Equipment, Exercise, Outlet, SetRow, Workout } from './types'
 import { sgDate, sgIso } from './util'
+import { weeklyFileName, weeklySummary } from './weekly'
+import type { Week } from './week'
 
 // The raw tables, as the JSON export and the weekly summary both read them.
 export type GymData = {
@@ -105,6 +107,12 @@ export async function buildExportFile(): Promise<File> {
   const name = `gymlog-${sgDate()}.json`
   const json = JSON.stringify(data, null, 2)
   return new File([json], name, { type: 'application/json' })
+}
+
+export async function buildWeeklyFile(week: Week): Promise<File> {
+  const data = await loadAll()
+  const md = weeklySummary(data, week, sgIso())
+  return new File([md], weeklyFileName(week), { type: 'text/markdown' })
 }
 
 // Share sheet when the browser offers one for files, otherwise a plain download.
