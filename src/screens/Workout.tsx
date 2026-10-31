@@ -19,6 +19,7 @@ import Thumb from '../components/Thumb'
 import Picker from './Picker'
 import FinishSheet from './FinishSheet'
 import TechniqueSheet from './TechniqueSheet'
+import { nextSet, type NextSet } from '../nextSet'
 
 type Props = { workoutId: string; onDone: () => void }
 
@@ -174,6 +175,17 @@ export default function Workout({ workoutId, onDone }: Props) {
 
   const exerciseOrder = [...new Set(sets.map((s) => s.exerciseId))]
   const { done, total } = countSets(sets)
+  const up = nextSet(sets)
+
+  // The dock's ✓: same as ticking the row itself.
+  function tick(row: SetRow) {
+    navigator.vibrate?.(40)
+    saveRow({ ...row, ghost: false, completedAt: sgIso() })
+  }
+
+  function jumpTo(exerciseId: string) {
+    document.getElementById(`card-${exerciseId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
 
   return (
     <div className="screen workout">
@@ -249,6 +261,16 @@ export default function Workout({ workoutId, onDone }: Props) {
         Finish workout
       </button>
 
+      {total > 0 && (
+        <UpNextDock
+          up={up}
+          ex={up ? exercises[up.row.exerciseId] : undefined}
+          onTick={() => up && tick(up.row)}
+          onJump={() => up && jumpTo(up.row.exerciseId)}
+          onFinish={() => setFinishing(true)}
+        />
+      )}
+
       <TechniqueSheet ex={techniqueFor} onClose={() => setTechniqueFor(null)} />
 
       <FinishSheet
@@ -263,6 +285,67 @@ export default function Workout({ workoutId, onDone }: Props) {
       {picking && (
         <Picker outlet={outlet} onPick={addExercise} onClose={() => setPicking(false)} />
       )}
+    </div>
+  )
+}
+
+// Fixed to the bottom of the screen: the next unticked set and one big ✓, so the
+// thumb never has to find the row. When everything is ticked it becomes Finish.
+function UpNextDock({
+  up,
+  ex,
+  onTick,
+  onJump,
+  onFinish,
+}: {
+  up: NextSet | null
+  ex?: Exercise
+  onTick: () => void
+  onJump: () => void
+  onFinish: () => void
+}) {
+  const [pop, setPop] = useState(false)
+  if (!up || !ex) {
+    return (
+      <div className="dock done">
+        <div className="dock-body">
+          <div className="dock-kicker">All sets ticked</div>
+          <div className="dock-name">Nice work</div>
+        </div>
+        <button type="button" className="btn primary dock-finish" onClick={onFinish}>
+          Finish
+        </button>
+      </div>
+    )
+  }
+  const label = up.number === 0 ? 'Warm-up' : `Set ${up.number} of ${up.total}`
+  const text = formatLast(ex, [{ ...up.row, isWarmup: false }]).replace(/^Last: /, '')
+  const i = text.indexOf(' × ')
+  return (
+    <div className="dock">
+      <button type="button" className="dock-body" onClick={onJump} aria-label={`Scroll to ${ex.name}`}>
+        <div className="dock-kicker">Up next · {label}</div>
+        <div className="dock-name">{ex.name}</div>
+        <div className="dock-meta">
+          {i === -1 ? text : (
+            <>
+              <b>{text.slice(0, i)}</b> × {text.slice(i + 3)}
+            </>
+          )}
+        </div>
+      </button>
+      <button
+        type="button"
+        className={`dock-check ${pop ? 'pop' : ''}`}
+        aria-label={`Complete ${ex.name} ${label}`}
+        onClick={() => {
+          setPop(true)
+          window.setTimeout(() => setPop(false), 200)
+          onTick()
+        }}
+      >
+        ✓
+      </button>
     </div>
   )
 }
