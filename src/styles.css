@@ -326,6 +326,8 @@ h3,
   min-height: var(--tap);
   border-radius: var(--r-ctl);
   display: flex;
+  flex-wrap: wrap;
+  align-content: center; /* centres the one line vertically; baseline keeps the unit on the number's baseline */
   align-items: baseline;
   justify-content: center;
   gap: 3px;
