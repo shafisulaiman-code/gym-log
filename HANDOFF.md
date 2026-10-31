@@ -10,11 +10,12 @@ Status as of 2026-10-31: Phase 1 is built and has been through one redesign pass
 - **Technique sheet**: tap the thumbnail or name. Muscles, rep range, load mode and caution pills, start/end line drawings that crossfade (side by side under reduced motion), cues, a CC BY-SA credit line, "Watch on YouTube" fallback.
 - **Kettlebells**: scrollable bell chips (seed sizes plus any size ever ticked) and a "…" chip for a typed weight.
 - **Finish sheet**: duration, sets, volume, per-exercise lines, warning about unticked sets, Keep going / Finish.
-- **Exercise picker**: full-screen overlay with thumbnails; back closes it. Custom machine is a bottom sheet.
+- **Exercise picker**: full-screen overlay with thumbnails; back closes it. A muscle chip row (All, Chest, Back, Shoulders, Biceps, Triceps, Legs, Glutes, Core) under the search field: a chip shows one flat alphabetical list of every exercise hitting that muscle from any equipment type, gated ones with their note; All is the grouped view (Machine, Cable, Free weight, Kettlebell, Core, Plyo). Mapping in `src/muscles.ts` (tested). Custom machine is a bottom sheet.
 - **Cardio**: segmented control. 4x4 shows a session timeline, shared speed and incline, and a per-interval table (peak HR per row; tap a speed or incline cell to override that row). RPE chips. Prefill copies the plan and clears the measurements.
 - **Bodyweight**: restyled, same behaviour.
 - **Export**: sheet with file name and size, Share or download, Copy JSON, and a textarea fallback when copying is blocked (plain http).
-- **Storage**: Dexie, schema version 2 (adds `SetRow.ghost`, `Exercise.cues`, `Exercise.visualId`, `Exercise.visualFrames`). No migration needed; seed rows are re-put on every start.
+- **Storage**: Dexie, schema version 2 (adds `SetRow.ghost`, `Exercise.cues`, `Exercise.visualId`, `Exercise.visualFrames`). No migration needed; seed rows are re-put on every start and seed exercises that leave `seed.json` are pruned (`src/seedPrune.ts`). Set rows pointing at a pruned exercise are skipped by the Workout loader.
+- **Library**: 53 seed exercises in six groups. 31 Oct 2026 expansion: Pec Fly and Rear Delt Fly replace the combined machine; 7 cable, 8 dumbbell and 6 plyo moves added. Box Jump uses `loadMode: 'height_cm'`: `weightKg` holds the box height in cm, the stepper and "Last" line say cm, volume ignores it, export shape unchanged (the exercise's loadMode tells a reader it is cm).
 - **PWA**: manifest colours `#0b0b0d`; precache includes the font and the visuals.
 
 ## Where things are
@@ -28,7 +29,7 @@ Status as of 2026-10-31: Phase 1 is built and has been through one redesign pass
 
 ## Technique visuals
 
-Everkinetic line drawings (CC BY-SA 3.0, via Wikimedia Commons), two frames per exercise, recoloured light-on-dark. The first pass used the free ExerciseDB GIFs; Shafi found them too pixelated (180 px source) and chose the drawings on 31 Oct 2026. 21 of 31 seed exercises are covered. Proxies: Goblet Squat uses a plié squat with a dumbbell, Kettlebell Press a one-arm dumbbell press, Kettlebell Deadlift a dumbbell deadlift, Lat Pulldown an underhand pulldown (the wide-grip files on Commons are a start frame plus 172 px GIFs), machine Seated Row the seated cable row, Face Pull a seated rear lateral cable raise, Split Squat a barbell lunge. Hip Abductor / Adductor is a single still (only one large frame exists), so it does not animate. The script refuses sources under 600 px. No drawing (placeholder + YouTube): kettlebell swing, row, carry, clean, halo; Pallof press; dead bug; bird-dog; plank; hanging knee raise. The mapping is `VISUALS` in `scripts/fetch_visuals.py`; edit it and rerun to change one. Attribution lives in `public/visuals/ATTRIBUTION.md` and on the sheet.
+Everkinetic line drawings (CC BY-SA 3.0, via Wikimedia Commons), two frames per exercise, recoloured light-on-dark. The first pass used the free ExerciseDB GIFs; Shafi found them too pixelated (180 px source) and chose the drawings on 31 Oct 2026. 32 of 53 seed exercises are covered. Proxies: Goblet Squat uses a plié squat with a dumbbell, Kettlebell Press a one-arm dumbbell press, Kettlebell Deadlift a dumbbell deadlift, Lat Pulldown an underhand pulldown, machine Seated Row the seated cable row, Face Pull a seated rear lateral cable raise, Split Squat a barbell lunge, Bulgarian Split Squat a barbell one-leg squat, Cable Crunch the seated version. Hip Abductor / Adductor is a single still. No drawing (placeholder + YouTube): kettlebell swing, row, carry, clean, halo; Pallof press; dead bug; bird-dog; plank; hanging knee raise; Rear Delt Fly; Cable Lateral Raise; Single-arm Cable Row; Cable Pull-through; One-arm Dumbbell Row; all six plyo moves. The mapping is `VISUALS` in `scripts/fetch_visuals.py`; edit it and rerun to change one (sources under 600 px are refused). Attribution lives in `public/visuals/ATTRIBUTION.md` and on the sheet.
 
 ## Decisions not spelled out in PLAN.md
 
@@ -48,4 +49,4 @@ Everkinetic line drawings (CC BY-SA 3.0, via Wikimedia Commons), two frames per 
 1. **Shafi's click-through of the redesign** on the phone over Wi-Fi.
 2. **Deploy** to GitHub Pages (the workflow already exists; enable Pages in repo settings) once he says the click-through passed.
 3. **Acceptance test** on the phone in airplane mode as an installed PWA, per PLAN.md.
-4. Later: drawings for the ten uncovered exercises (another CC source, or commissioned in the same style); a paid animation pack only if the sheet earns its place.
+4. Later: drawings for the 21 uncovered exercises (another CC source, or commissioned in the same style); a paid animation pack only if the sheet earns its place.
