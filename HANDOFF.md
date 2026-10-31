@@ -1,6 +1,6 @@
 # Handoff
 
-Status as of 2026-10-31: Phase 1 is built and has been through one redesign pass after Shafi's first click-through. It is **not deployed** and has **not passed the acceptance test** in PLAN.md yet. The redesign work is in the working tree, uncommitted, by Shafi's instruction.
+Status as of 2026-10-31 (evening): Phase 1 is built, redesigned, expanded (53 exercises) and **deployed to GitHub Pages** at https://shafisulaiman-code.github.io/gym-log/ after Shafi's phone click-through passed. Every push to `main` redeploys via `.github/workflows/deploy.yml`. The **airplane-mode acceptance test** in PLAN.md (installed PWA, offline) has **not been run yet**.
 
 ## What was built (Phase 1 + redesign)
 
@@ -46,7 +46,5 @@ Everkinetic line drawings (CC BY-SA 3.0, via Wikimedia Commons), two frames per 
 
 ## Still to do
 
-1. **Shafi's click-through of the redesign** on the phone over Wi-Fi.
-2. **Deploy** to GitHub Pages (the workflow already exists; enable Pages in repo settings) once he says the click-through passed.
-3. **Acceptance test** on the phone in airplane mode as an installed PWA, per PLAN.md.
-4. Later: drawings for the 21 uncovered exercises (another CC source, or commissioned in the same style); a paid animation pack only if the sheet earns its place.
+1. **Acceptance test** on the phone in airplane mode as an installed PWA, per PLAN.md: open the Pages link in Safari, Share, Add to Home Screen, open it once online so the service worker precaches, then airplane mode and log a workout.
+2. Later: drawings for the 21 uncovered exercises (another CC source, or commissioned in the same style); a paid animation pack only if the sheet earns its place.
