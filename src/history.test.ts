@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { countSets, prefillRows, formatLast, loadUnit } from './history'
+import { countSets, prefillRows, formatLast, loadUnit, knownRows } from './history'
 import type { Equipment, Exercise, SetRow } from './types'
 
 export const legPress: Exercise = {
@@ -107,5 +107,31 @@ describe('height_cm', () => {
   it('loadUnit is cm only for height_cm', () => {
     expect(loadUnit(boxJump)).toBe('cm')
     expect(loadUnit(legPress)).toBe('kg')
+  })
+})
+
+const slam: Exercise = {
+  ...boxJump,
+  id: 'plyo-med-ball-slam',
+  name: 'Medicine Ball Slam',
+  primaryMuscles: ['core', 'lats'],
+  loadMode: 'total',
+  defaultIncrementKg: 1,
+  repRange: [8, 12],
+}
+
+describe('prefill for a hand-held load with no stack', () => {
+  it('gives the medicine ball slam a starting weight so the stepper and the saved row agree', () => {
+    const [row] = prefillRows(slam, undefined, 'w1', [])
+    expect(row.weightKg).toBe(6)
+    expect(row.reps).toBe(10)
+  })
+})
+
+describe('knownRows', () => {
+  it('drops rows whose exercise is no longer in the library and keeps the rest', () => {
+    const keep = heightSet({ exerciseId: boxJump.id })
+    const orphan = heightSet({ exerciseId: 'm-pec-fly-rear-delt' })
+    expect(knownRows([orphan, keep], { [boxJump.id]: boxJump })).toEqual([keep])
   })
 })

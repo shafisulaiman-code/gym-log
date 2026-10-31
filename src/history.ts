@@ -78,6 +78,8 @@ export function prefillRows(
     row.weightKg = 50
   } else if (ex.equipmentType !== 'bodyweight') {
     row.weightKg = eq?.stackStartKg ?? ex.defaultIncrementKg
+  } else if (ex.loadMode === 'total') {
+    row.weightKg = 6 // a hand-held implement with no stack, e.g. a medicine ball
   }
   if (ex.loadMode === 'timed') {
     row.durationSec = ex.repRange[0]
@@ -85,6 +87,11 @@ export function prefillRows(
     row.reps = 10
   }
   return [row]
+}
+
+// Set rows whose exercise has left the library (pruned seed row) are skipped.
+export function knownRows(rows: SetRow[], exercises: Record<string, Exercise>): SetRow[] {
+  return rows.filter((r) => exercises[r.exerciseId])
 }
 
 // e.g. "Last: 60 kg × 12, 12, 10" or "Last: 60×12, 65×10"
