@@ -2,23 +2,33 @@
   "outlets": [
     {
       "id": "af-tampines-west",
-      "name": "AF Tampines West"
+      "name": "AF Tampines West",
+      "lat": 1.34876,
+      "lng": 103.93569
     },
     {
       "id": "af-tampines-central",
-      "name": "AF Tampines Central"
+      "name": "AF Tampines Central",
+      "lat": 1.35536,
+      "lng": 103.93448
     },
     {
       "id": "af-hong-lim",
-      "name": "AF Hong Lim Complex"
+      "name": "AF Hong Lim Complex",
+      "lat": 1.2853,
+      "lng": 103.84582
     },
     {
       "id": "af-orchard-cineleisure",
-      "name": "AF Orchard Cineleisure"
+      "name": "AF Orchard Cineleisure",
+      "lat": 1.30152,
+      "lng": 103.83643
     },
     {
       "id": "af-orchard-gateway",
-      "name": "AF Orchard Gateway"
+      "name": "AF Orchard Gateway",
+      "lat": 1.30044,
+      "lng": 103.83944
     }
   ],
   "kettlebellSizesKg": [

@@ -12,6 +12,8 @@ export type EquipmentType =
 export interface Outlet {
   id: string
   name: string
+  lat?: number // WGS84, for "near you" on Home; outlets without coordinates are never suggested
+  lng?: number
 }
 
 export interface Exercise {

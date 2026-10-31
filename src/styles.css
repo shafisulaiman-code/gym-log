@@ -1038,6 +1038,30 @@ h3,
   gap: 6px;
 }
 
+/* "You are at" outlet suggestion from the phone's location */
+.near-note {
+  color: var(--accent);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
+}
+
+.near-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-right: 8px;
+  vertical-align: 1px;
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+.chip.selected .near-dot {
+  background: var(--accent-text);
+  box-shadow: none;
+}
+
 /* Up next dock: the next unticked set and one big ✓, fixed above the thumb.
    z-index sits above the sticky header (5) and below sheets and overlays (10+). */
 .screen.workout {

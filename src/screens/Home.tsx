@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { db, findActiveWorkout } from '../db'
 import ExportSheet from './ExportSheet'
 import type { Outlet, Workout } from '../types'
+import { nearestOutlet, type LatLng } from '../geo'
 import { getLastOutlet, minutesBetween, setLastOutlet, sgIso, shortOutlet, uuid } from '../util'
 
 type Props = {
@@ -33,10 +34,30 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
   const [active, setActive] = useState<Workout | undefined>()
   const [past, setPast] = useState<PastRow[]>([])
   const [exporting, setExporting] = useState(false)
+  const [here, setHere] = useState<LatLng | null>(null)
+  const [nearId, setNearId] = useState<string | null>(null)
+  // Once Shafi taps an outlet himself, the suggestion never overrides it.
+  const touched = useRef(false)
 
   useEffect(() => {
     load()
+    // One low-power fix, happy with anything from the last five minutes. Any
+    // failure (denied, offline GPS, desktop) just means no suggestion.
+    navigator.geolocation?.getCurrentPosition(
+      (pos) => setHere({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => {},
+      { maximumAge: 300_000, timeout: 8_000, enableHighAccuracy: false },
+    )
   }, [])
+
+  // Preselect the outlet you are standing in, unless a workout is already open
+  // there or you have chosen one by hand.
+  useEffect(() => {
+    if (!here || outlets.length === 0) return
+    const near = nearestOutlet(outlets, here)
+    setNearId(near?.outlet.id ?? null)
+    if (near && !active && !touched.current) setOutletId(near.outlet.id)
+  }, [here, outlets, active])
 
   async function load() {
     const [os, workouts, sets, cardio, act] = await Promise.all([
@@ -81,6 +102,7 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
   }
 
   function chooseOutlet(id: string) {
+    touched.current = true
     setOutletId(id)
     setLastOutlet(id)
   }
@@ -101,7 +123,15 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
     <div className="screen">
       <div className="lbl home-date">{shortDate(sgIso())}</div>
 
-      <div className="lbl">Outlet</div>
+      <div className="lbl">
+        Outlet
+        {nearId && (
+          <span className="near-note">
+            {' '}
+            · you are at {shortOutlet(outlets.find((o) => o.id === nearId)?.name ?? '')}
+          </span>
+        )}
+      </div>
       <div className="outlet-grid" role="radiogroup" aria-label="Outlet">
         {outlets.map((o) => (
           <button
@@ -109,10 +139,11 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
             type="button"
             role="radio"
             aria-checked={o.id === outletId}
-            className={`chip ${o.id === outletId ? 'selected' : ''}`}
+            className={`chip ${o.id === outletId ? 'selected' : ''} ${o.id === nearId ? 'near' : ''}`}
             disabled={!!active && o.id !== outletId}
             onClick={() => chooseOutlet(o.id)}
           >
+            {o.id === nearId && <i className="near-dot" aria-hidden="true" />}
             {shortOutlet(o.name)}
           </button>
         ))}
