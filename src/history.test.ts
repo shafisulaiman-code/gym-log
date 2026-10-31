@@ -177,6 +177,14 @@ describe('formatSession', () => {
     expect(formatSession(boxJump, [{ ...w(60, 5), exerciseId: boxJump.id }])).toBe('60 cm × 5')
     expect(formatSession(plank, [{ ...last[1], exerciseId: plank.id, weightKg: undefined, reps: undefined, durationSec: 45 }])).toBe('45s')
   })
+  it('keeps the load markers when weights differ', () => {
+    expect(formatSession(dbBench, [{ ...w(14, 10), exerciseId: dbBench.id }, { ...w(16, 8), exerciseId: dbBench.id }])).toBe('14 ph×10, 16 ph×8')
+    expect(formatSession(pushUp, [{ ...w(0, 15), exerciseId: pushUp.id }, { ...w(10, 12), exerciseId: pushUp.id }])).toBe('BW×15, BW+10×12')
+    expect(formatSession(boxJump, [{ ...w(50, 5), exerciseId: boxJump.id }, { ...w(60, 5), exerciseId: boxJump.id }])).toBe('50 cm×5, 60 cm×5')
+  })
+  it('treats no weight and 0 as the same bodyweight', () => {
+    expect(formatSession(pushUp, [{ ...w(0, 15), exerciseId: pushUp.id, weightKg: undefined }, { ...w(0, 12), exerciseId: pushUp.id }])).toBe('BW × 15, 12')
+  })
   it('is empty with no working sets', () => {
     expect(formatSession(legPress, [last[0]])).toBe('')
   })

@@ -124,7 +124,7 @@ export function formatLast(ex: Exercise, last: SetRow[]): string {
 
 // The weekly summary's form of one session: no units (kg is stated once in the
 // file's header), "ph" for per hand, timed sets as seconds with no load.
-// e.g. "100 × 12, 12, 10", "14 ph × 10", "BW+10 × 12", "45s", "100×12, 105×10"
+// e.g. "100 × 12, 12, 10", "14 ph × 10", "BW+10 × 12", "45s", "100×12, 105×10", "14 ph×10, 16 ph×8"
 export function formatSession(ex: Exercise, rows: SetRow[]): string {
   return loadText(ex, rows, { units: false })
 }
@@ -143,13 +143,18 @@ function loadText(ex: Exercise, rows: SetRow[], { units }: { units: boolean }): 
     return ex.loadMode === 'per_hand' ? `${fmt(w)} ph` : fmt(w)
   }
 
-  const weights = new Set(working.map((s) => s.weightKg))
+  // In the summary form, bodyweight plus with no weight and with 0 are the same "BW".
+  const same = (w: number | undefined) => (!units && ex.loadMode === 'bodyweight_plus' ? (w ?? 0) : w)
+  const weights = new Set(working.map((s) => same(s.weightKg)))
   if (weights.size === 1 || (timed && !units)) {
     const l = load(working[0].weightKg)
     const counts = working.map(count).join(', ')
     return l ? `${l} × ${counts}` : counts
   }
-  return working.map((s) => `${fmt(s.weightKg ?? 0)}×${count(s)}`).join(', ')
+  // Mixed weights: "60×12, 65×10" in the Last line; the summary keeps each set's
+  // marker, e.g. "14 ph×10, 16 ph×8", "BW×15, BW+10×12", "50 cm×5, 60 cm×5".
+  const each = (s: SetRow) => (units ? fmt(s.weightKg ?? 0) : load(s.weightKg ?? 0))
+  return working.map((s) => `${each(s)}×${count(s)}`).join(', ')
 }
 
 // Header pill and progress strip: every row counts (ghost included), done = ticked.
