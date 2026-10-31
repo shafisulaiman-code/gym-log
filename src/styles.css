@@ -1038,6 +1038,22 @@ h3,
   gap: 6px;
 }
 
+/* Picker: muscle chip row under the search field */
+.muscle-chips {
+  margin: 0 0 12px;
+  flex-wrap: nowrap;
+}
+
+.muscle-chips .chip {
+  white-space: nowrap;
+  flex: none;
+}
+
+.empty {
+  padding: 24px 0;
+  text-align: center;
+}
+
 /* "You are at" outlet suggestion from the phone's location */
 .near-note {
   color: var(--accent);
