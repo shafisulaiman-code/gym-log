@@ -116,29 +116,40 @@ export function ratingOf(rows: SetRow[]): Rating {
 // e.g. "Last: 60 kg × 12, 12, 10 · 8/10 · back" or "Last: 60×12, 65×10"
 export function formatLast(ex: Exercise, last: SetRow[]): string {
   if (last.length === 0) return 'Last: —'
+  const text = loadText(ex, last, { units: true })
+  if (text === '') return 'Last: warm-up only'
   const { rpe, pain } = ratingOf(last)
-  return lastText(ex, last) + (rpe !== undefined ? ` · ${rpe}/10` : '') + (pain ? ` · ${pain}` : '')
+  return `Last: ${text}` + (rpe !== undefined ? ` · ${rpe}/10` : '') + (pain ? ` · ${pain}` : '')
 }
 
-function lastText(ex: Exercise, last: SetRow[]): string {
-  const working = last.filter((s) => !s.isWarmup)
-  if (working.length === 0) return 'Last: warm-up only'
+// The weekly summary's form of one session: no units (kg is stated once in the
+// file's header), "ph" for per hand, timed sets as seconds with no load.
+// e.g. "100 × 12, 12, 10", "14 ph × 10", "BW+10 × 12", "45s", "100×12, 105×10"
+export function formatSession(ex: Exercise, rows: SetRow[]): string {
+  return loadText(ex, rows, { units: false })
+}
 
-  const count = (s: SetRow) =>
-    ex.loadMode === 'timed' ? `${fmt(s.durationSec ?? 0)}s` : fmt(s.reps ?? 0)
+// Working sets only; '' when there are none.
+function loadText(ex: Exercise, rows: SetRow[], { units }: { units: boolean }): string {
+  const working = rows.filter((s) => !s.isWarmup)
+  if (working.length === 0) return ''
+
+  const timed = ex.loadMode === 'timed'
+  const count = (s: SetRow) => (timed ? `${fmt(s.durationSec ?? 0)}s` : fmt(s.reps ?? 0))
   const load = (w: number | undefined) => {
-    if (ex.loadMode === 'bodyweight_plus') return w ? `BW+${fmt(w)} kg` : 'BW'
-    if (w === undefined) return ''
-    return `${fmt(w)} ${loadUnit(ex)}`
+    if (ex.loadMode === 'bodyweight_plus') return w ? `BW+${fmt(w)}${units ? ' kg' : ''}` : 'BW'
+    if (w === undefined || (timed && !units)) return ''
+    if (units || ex.loadMode === 'height_cm') return `${fmt(w)} ${loadUnit(ex)}`
+    return ex.loadMode === 'per_hand' ? `${fmt(w)} ph` : fmt(w)
   }
 
   const weights = new Set(working.map((s) => s.weightKg))
-  if (weights.size === 1) {
+  if (weights.size === 1 || (timed && !units)) {
     const l = load(working[0].weightKg)
     const counts = working.map(count).join(', ')
-    return l ? `Last: ${l} × ${counts}` : `Last: ${counts}`
+    return l ? `${l} × ${counts}` : counts
   }
-  return 'Last: ' + working.map((s) => `${fmt(s.weightKg ?? 0)}×${count(s)}`).join(', ')
+  return working.map((s) => `${fmt(s.weightKg ?? 0)}×${count(s)}`).join(', ')
 }
 
 // Header pill and progress strip: every row counts (ghost included), done = ticked.

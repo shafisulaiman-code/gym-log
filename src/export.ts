@@ -1,8 +1,19 @@
 import { db } from './db'
-import type { SetRow } from './types'
+import type { Bodyweight, CardioSession, Equipment, Exercise, Outlet, SetRow, Workout } from './types'
 import { sgDate, sgIso } from './util'
 
-export async function buildExport() {
+// The raw tables, as the JSON export and the weekly summary both read them.
+export type GymData = {
+  outlets: Outlet[]
+  exercises: Exercise[]
+  equipment: Equipment[]
+  workouts: Workout[]
+  sets: SetRow[]
+  cardio: CardioSession[]
+  bodyweight: Bodyweight[]
+}
+
+export async function loadAll(): Promise<GymData> {
   const [outlets, exercises, equipment, workouts, sets, cardio, bodyweight] = await Promise.all([
     db.outlets.toArray(),
     db.exercises.toArray(),
@@ -12,6 +23,11 @@ export async function buildExport() {
     db.cardio_sessions.toArray(),
     db.bodyweight.orderBy('date').toArray(),
   ])
+  return { outlets, exercises, equipment, workouts, sets, cardio, bodyweight }
+}
+
+export async function buildExport() {
+  const { outlets, exercises, equipment, workouts, sets, cardio, bodyweight } = await loadAll()
   const outletName = (id: string) => outlets.find((o) => o.id === id)?.name ?? id
   const exerciseName = (id: string) => exercises.find((e) => e.id === id)?.name ?? id
   const equipmentLabel = (id?: string) => equipment.find((e) => e.id === id)?.label ?? null

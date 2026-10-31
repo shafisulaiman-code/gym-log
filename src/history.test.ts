@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { countSets, prefillRows, formatLast, loadUnit, knownRows, ratingOf } from './history'
+import { countSets, prefillRows, formatLast, formatSession, loadUnit, knownRows, ratingOf } from './history'
 import type { Equipment, Exercise, SetRow } from './types'
 
 export const legPress: Exercise = {
@@ -157,5 +157,27 @@ describe('ratingOf and the Last suffix', () => {
   })
   it('ignores a rating on an unticked row', () => {
     expect(ratingOf([{ ...last[1], completedAt: undefined, rpe: 9 }])).toEqual({})
+  })
+})
+
+const dbBench: Exercise = { ...legPress, id: 'db-bench', name: 'Dumbbell Bench Press', equipmentType: 'dumbbell', loadMode: 'per_hand' }
+const pushUp: Exercise = { ...legPress, id: 'bw-push-up', name: 'Push-up', equipmentType: 'bodyweight', loadMode: 'bodyweight_plus' }
+const plank: Exercise = { ...legPress, id: 'core-plank', name: 'Plank', equipmentType: 'bodyweight', loadMode: 'timed' }
+
+describe('formatSession', () => {
+  const w = (weightKg: number, reps: number): SetRow => ({ ...last[1], id: `s${weightKg}${reps}`, weightKg, reps })
+  it('writes loads without units and leaves warm-ups out', () => {
+    expect(formatSession(legPress, [last[0], w(100, 12), w(100, 10)])).toBe('100 × 12, 10')
+    expect(formatSession(legPress, [w(100, 12), w(105, 10)])).toBe('100×12, 105×10')
+  })
+  it('marks per hand, bodyweight, height and timed loads', () => {
+    expect(formatSession(dbBench, [{ ...w(14, 10), exerciseId: dbBench.id }])).toBe('14 ph × 10')
+    expect(formatSession(pushUp, [{ ...w(0, 15), exerciseId: pushUp.id }])).toBe('BW × 15')
+    expect(formatSession(pushUp, [{ ...w(10, 12), exerciseId: pushUp.id }])).toBe('BW+10 × 12')
+    expect(formatSession(boxJump, [{ ...w(60, 5), exerciseId: boxJump.id }])).toBe('60 cm × 5')
+    expect(formatSession(plank, [{ ...last[1], exerciseId: plank.id, weightKg: undefined, reps: undefined, durationSec: 45 }])).toBe('45s')
+  })
+  it('is empty with no working sets', () => {
+    expect(formatSession(legPress, [last[0]])).toBe('')
   })
 })
