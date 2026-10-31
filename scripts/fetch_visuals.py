@@ -52,7 +52,18 @@ VISUALS: dict[str, list[str]] = {
     "m-shoulder-press": ["File:Seated shoulder press machine 1.svg", "File:Seated shoulder press machine 2.svg"],
     "m-leg-curl": ["File:Seated leg curl 1.svg", "File:Seated leg curl 2.svg"],
     "m-leg-extension": ["File:Leg extensions 1.svg", "File:Leg extensions 2.svg"],
-    "m-pec-fly-rear-delt": ["File:Butterfly machine 1.svg", "File:Butterfly machine 2.svg"],
+    "m-pec-fly": ["File:Butterfly machine 1.svg", "File:Butterfly machine 2.svg"],
+    "c-cable-curl": ["File:Standing biceps curl with cable 1.svg", "File:Standing biceps curl with cable 2.svg"],
+    "c-straight-arm-pulldown": ["File:Straight arm push down 1.svg", "File:Straight arm push down 2.svg"],
+    "c-cable-chest-fly": ["File:Cable crossover 1.svg", "File:Cable crossover 2.svg"],
+    "c-cable-crunch": ["File:Seated ab crunch with cable 1.svg", "File:Seated ab crunch with cable 2.svg"],  # proxy: seated
+    "db-curl": ["File:Biceps curl with dumbbell 1.svg", "File:Biceps curl with dumbbell 2.svg"],
+    "db-lateral-raise": ["File:Lateral dumbbell raises 1.svg", "File:Lateral dumbbell raises 2.svg"],
+    "db-incline-press": ["File:Incline dumbbell press 1.svg", "File:Incline dumbbell press 2.svg"],
+    "db-bulgarian-split-squat": ["File:One leg squat with barbell 1.svg", "File:One leg squat with barbell 2.svg"],  # proxy: barbell
+    "db-skull-crusher": ["File:Lying triceps extension with dumbbells 1.svg", "File:Lying triceps extension with dumbbells 2.svg"],
+    "db-arnold-press": ["File:Arnold press 1.svg", "File:Arnold press 2.svg"],
+    "db-pullover": ["File:Dumbbell bent arm pullover 1.svg", "File:Dumbbell bent arm pullover 2.svg"],
     "m-hip-abd-add": ["File:Thigh abductor 1.svg"],  # seated machine; only one large frame exists, so a still
     "c-cable-row": ["File:Seated cable rows 1.svg", "File:Seated cable rows 2.svg"],
     "c-face-pull": ["File:Seated rear lateral cable raise 1.svg", "File:Seated rear lateral cable raise 2.svg"],  # proxy

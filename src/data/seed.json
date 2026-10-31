@@ -518,8 +518,8 @@
         "Bring the arms together and squeeze the chest for a beat.",
         "Open slowly until you feel the stretch, no further."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "Butterfly machine",
+      "visualFrames": 2
     },
     {
       "id": "m-rear-delt-fly",
@@ -1027,8 +1027,8 @@
         "Lower slowly; the cable keeps tension at the bottom.",
         "Wrists straight the whole way."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "Standing biceps curl with cable",
+      "visualFrames": 2
     },
     {
       "id": "c-cable-lateral-raise",
@@ -1085,8 +1085,8 @@
         "Keep the elbows locked soft; no bending to cheat.",
         "Let the arms float back up slowly for a stretch."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "Straight arm push down",
+      "visualFrames": 2
     },
     {
       "id": "c-cable-chest-fly",
@@ -1114,8 +1114,8 @@
         "Bring the hands together in front of the chest and squeeze.",
         "Open until the chest stretches, no further."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "Cable crossover",
+      "visualFrames": 2
     },
     {
       "id": "c-single-arm-row",
@@ -1173,8 +1173,8 @@
         "!Round the upper back, not the lower back.",
         "Rise slowly, keep tension on the cable."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "Seated ab crunch with cable",
+      "visualFrames": 2
     },
     {
       "id": "c-cable-pull-through",
@@ -1232,8 +1232,8 @@
         "Turn the palms up as you lift.",
         "Lower in three seconds; no bouncing at the bottom."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "Biceps curl with dumbbell",
+      "visualFrames": 2
     },
     {
       "id": "db-one-arm-row",
@@ -1291,8 +1291,8 @@
         "Lead with the elbows; pour the water out of the jugs.",
         "Lower slowly; the weight should feel too light."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "Lateral dumbbell raises",
+      "visualFrames": 2
     },
     {
       "id": "db-incline-press",
@@ -1322,8 +1322,8 @@
         "Lower to the upper chest, elbows about 45 degrees out.",
         "Keep the wrists stacked over the elbows."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "Incline dumbbell press",
+      "visualFrames": 2
     },
     {
       "id": "db-bulgarian-split-squat",
@@ -1352,8 +1352,8 @@
         "Chest up, slight forward lean for glutes.",
         "Drive through the whole front foot."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "One leg squat with barbell",
+      "visualFrames": 2
     },
     {
       "id": "db-skull-crusher",
@@ -1381,8 +1381,8 @@
         "Keep the upper arms still and pointed at the ceiling.",
         "Extend without locking out hard."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "Lying triceps extension with dumbbells",
+      "visualFrames": 2
     },
     {
       "id": "db-arnold-press",
@@ -1411,8 +1411,8 @@
         "Finish with the arms straight, bells over the shoulders.",
         "Reverse the turn on the way down, ribs down."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "Arnold press",
+      "visualFrames": 2
     },
     {
       "id": "db-pullover",
@@ -1441,8 +1441,8 @@
         "Pull back over the chest with the lats, ribs down.",
         "Light weight, slow tempo."
       ],
-      "visualId": null,
-      "visualFrames": 0
+      "visualId": "Dumbbell bent arm pullover",
+      "visualFrames": 2
     },
     {
       "id": "plyo-box-jump",
