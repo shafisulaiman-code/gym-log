@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { db, findActiveWorkout } from '../db'
 import ExportSheet from './ExportSheet'
 import AddOutletSheet from './AddOutletSheet'
+import SessionSheet from './SessionSheet'
+import { CARDIO_LABELS } from '../sessionDetail'
 import type { Outlet, Workout } from '../types'
 import { nearestOutlet, type LatLng } from '../geo'
 import { getLastOutlet, minutesBetween, setLastOutlet, sgIso, shortOutlet, uuid } from '../util'
@@ -13,12 +15,6 @@ type Props = {
 }
 
 type PastRow = { workout: Workout; title: string; sub: string; dur: string }
-
-const CARDIO_LABELS: Record<string, string> = {
-  treadmill_z2: 'Zone 2',
-  treadmill_4x4: '4x4',
-  bike: 'Bike',
-}
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
@@ -38,6 +34,7 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
   const [here, setHere] = useState<LatLng | null>(null)
   const [nearId, setNearId] = useState<string | null>(null)
   const [addingGym, setAddingGym] = useState(false)
+  const [viewing, setViewing] = useState<Workout | null>(null)
   // Once Shafi taps an outlet himself, the suggestion never overrides it.
   const touched = useRef(false)
 
@@ -184,13 +181,13 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
         <p className="muted">Nothing logged yet.</p>
       ) : (
         past.map((p) => (
-          <div className="card past" key={p.workout.id}>
+          <button type="button" className="card past" key={p.workout.id} onClick={() => setViewing(p.workout)}>
             <div>
               <div className="title">{p.title}</div>
               <div className="sub">{p.sub}</div>
             </div>
             <div className="dur">{p.dur}</div>
-          </div>
+          </button>
         ))
       )}
 
@@ -204,6 +201,15 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
       </button>
 
       <ExportSheet open={exporting} onClose={() => setExporting(false)} />
+      <SessionSheet
+        workout={viewing}
+        outletName={shortOutlet(outlets.find((o) => o.id === viewing?.outletId)?.name ?? '')}
+        onClose={() => setViewing(null)}
+        onDeleted={() => {
+          setViewing(null)
+          load()
+        }}
+      />
       {here && (
         <AddOutletSheet
           open={addingGym}
