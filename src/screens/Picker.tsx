@@ -12,7 +12,7 @@ type Props = {
   onClose: () => void
 }
 
-const CATEGORY_ORDER = ['Machine', 'Cable', 'Free weight', 'Kettlebell', 'Core']
+const CATEGORY_ORDER = ['Machine', 'Cable', 'Free weight', 'Kettlebell', 'Core', 'Plyo']
 
 export default function Picker({ outlet, onPick, onClose }: Props) {
   const [visible, setVisible] = useState<Exercise[]>([])

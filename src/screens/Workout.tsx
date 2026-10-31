@@ -55,13 +55,17 @@ export default function Workout({ workoutId, onDone }: Props) {
       onDone()
       return
     }
-    const [o, exList, eqList, rows] = await Promise.all([
+    let rows: SetRow[]
+    const [o, exList, eqList, rowsRaw] = await Promise.all([
       db.outlets.get(w.outletId),
       db.exercises.toArray(),
       db.equipment.toArray(),
       db.sets.where('workoutId').equals(workoutId).toArray(),
     ])
+    rows = rowsRaw
     const exMap = Object.fromEntries(exList.map((e) => [e.id, e]))
+    // Rows for an exercise that has since left the seed are skipped, not crashed on.
+    rows = rows.filter((r) => exMap[r.exerciseId])
     rows.sort((a, b) => a.seq - b.seq)
 
     const lines: Record<string, string> = {}

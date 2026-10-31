@@ -1,5 +1,6 @@
 import Dexie, { type EntityTable } from 'dexie'
 import seed from './data/seed.json'
+import { staleSeedIds } from './seedPrune'
 import type {
   Bodyweight,
   CardioSession,
@@ -33,8 +34,9 @@ class GymDB extends Dexie {
       bodyweight: 'id, date',
       sync_log: 'id, workoutId', // unused until Phase 4
     })
-    // v2: SetRow.ghost, Exercise.cues and Exercise.visualId added. No index changes,
-    // no data to migrate (nothing in production yet); the bump records the change.
+    // v2: SetRow.ghost, Exercise.cues, Exercise.visualId and visualFrames added. No
+    // index changes, no data to migrate (nothing in production yet); the bump records
+    // the change. Seed rows removed from seed.json are pruned in setupDb().
     this.version(2).stores({
       outlets: 'id',
       exercises: 'id, category',
@@ -58,6 +60,11 @@ export const cardioModalities = seed.cardioModalities
 export async function setupDb() {
   await db.outlets.bulkPut(seed.outlets)
   await db.exercises.bulkPut(seed.exercises as unknown as Exercise[])
+  const stale = staleSeedIds(
+    await db.exercises.toArray(),
+    seed.exercises.map((e) => e.id),
+  )
+  if (stale.length > 0) await db.exercises.bulkDelete(stale)
   try {
     if (navigator.storage?.persist && !(await navigator.storage.persisted())) {
       await navigator.storage.persist()

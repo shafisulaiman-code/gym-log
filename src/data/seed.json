@@ -493,12 +493,11 @@
       "visualFrames": 2
     },
     {
-      "id": "m-pec-fly-rear-delt",
-      "name": "Pec Fly / Rear Delt",
+      "id": "m-pec-fly",
+      "name": "Pec Fly",
       "category": "Machine",
       "primaryMuscles": [
-        "chest",
-        "rear delts"
+        "chest"
       ],
       "pattern": "push_h",
       "equipmentType": "machine_selectorised",
@@ -512,16 +511,45 @@
       "backCaution": false,
       "kneeCaution": false,
       "gated": false,
-      "note": "Log fly and rear delt as separate custom machines if you do both.",
+      "note": "",
       "cues": [
-        "Set the seat so the handles are at shoulder height.",
-        "Slight elbow bend, held through the set.",
-        "Fly: bring the arms together, squeeze the chest.",
-        "Rear delt: open wide, squeeze the shoulder blades.",
-        "Log fly and rear delt as separate machines."
+        "Set the seat so the handles sit at mid-chest height.",
+        "Slight elbow bend, held the whole set.",
+        "Bring the arms together and squeeze the chest for a beat.",
+        "Open slowly until you feel the stretch, no further."
       ],
-      "visualId": "Butterfly machine",
-      "visualFrames": 2
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "m-rear-delt-fly",
+      "name": "Rear Delt Fly",
+      "category": "Machine",
+      "primaryMuscles": [
+        "rear delts",
+        "upper back"
+      ],
+      "pattern": "pull_h",
+      "equipmentType": "machine_selectorised",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 5,
+      "repRange": [
+        12,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Chest against the pad, handles at shoulder height.",
+        "Open wide with soft elbows, squeeze the shoulder blades.",
+        "Lead with the elbows, not the hands.",
+        "Light weight, full control; this muscle is small."
+      ],
+      "visualId": null,
+      "visualFrames": 0
     },
     {
       "id": "m-hip-abd-add",
@@ -969,6 +997,629 @@
         "Tuck the pelvis before the knees lift.",
         "Knees to hip height or above.",
         "Lower slowly, no swinging."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "c-cable-curl",
+      "name": "Cable Curl",
+      "category": "Cable",
+      "primaryMuscles": [
+        "biceps"
+      ],
+      "pattern": "curl",
+      "equipmentType": "cable",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        10,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Low pulley, straight or EZ bar, elbows pinned at the sides.",
+        "Curl to the shoulders without swinging the torso.",
+        "Lower slowly; the cable keeps tension at the bottom.",
+        "Wrists straight the whole way."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "c-cable-lateral-raise",
+      "name": "Cable Lateral Raise",
+      "category": "Cable",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "pattern": "raise",
+      "equipmentType": "cable",
+      "unilateral": true,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 1.25,
+      "repRange": [
+        12,
+        20
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Low pulley, cable crossing in front of the body.",
+        "Raise the arm out to shoulder height, elbow slightly bent.",
+        "Lead with the elbow, pinky a little higher than the thumb.",
+        "Lower under control; no shrugging."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "c-straight-arm-pulldown",
+      "name": "Straight-arm Pulldown",
+      "category": "Cable",
+      "primaryMuscles": [
+        "lats"
+      ],
+      "pattern": "pull_v",
+      "equipmentType": "cable",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        10,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "High pulley, hinge slightly forward, arms almost straight.",
+        "Sweep the bar down to the thighs with the lats.",
+        "Keep the elbows locked soft; no bending to cheat.",
+        "Let the arms float back up slowly for a stretch."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "c-cable-chest-fly",
+      "name": "Cable Chest Fly",
+      "category": "Cable",
+      "primaryMuscles": [
+        "chest"
+      ],
+      "pattern": "push_h",
+      "equipmentType": "cable",
+      "unilateral": false,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        10,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Pulleys at chest height, one step forward, slight stagger.",
+        "Elbows softly bent and fixed.",
+        "Bring the hands together in front of the chest and squeeze.",
+        "Open until the chest stretches, no further."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "c-single-arm-row",
+      "name": "Single-arm Cable Row",
+      "category": "Cable",
+      "primaryMuscles": [
+        "lats",
+        "upper back"
+      ],
+      "pattern": "pull_h",
+      "equipmentType": "cable",
+      "unilateral": true,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Seated or standing, one handle at waist height.",
+        "Pull the elbow back past the ribs, shoulder blade in.",
+        "Let the shoulder reach forward on the way out.",
+        "Hips still; the torso does not rotate."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "c-cable-crunch",
+      "name": "Cable Crunch",
+      "category": "Cable",
+      "primaryMuscles": [
+        "core"
+      ],
+      "pattern": "core",
+      "equipmentType": "cable",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        12,
+        20
+      ],
+      "backCaution": true,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Kneel facing the high pulley, rope behind the head.",
+        "Crunch the ribs toward the hips; hands stay by the head.",
+        "!Round the upper back, not the lower back.",
+        "Rise slowly, keep tension on the cable."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "c-cable-pull-through",
+      "name": "Cable Pull-through",
+      "category": "Cable",
+      "primaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "pattern": "hinge",
+      "equipmentType": "cable",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        10,
+        15
+      ],
+      "backCaution": true,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Face away from the low pulley, rope between the legs.",
+        "!Hinge at the hips with a flat back; it is a swing, not a squat.",
+        "Drive the hips forward and squeeze the glutes at the top.",
+        "Keep the rope close; the arms are just hooks."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "db-curl",
+      "name": "Dumbbell Curl",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "biceps"
+      ],
+      "pattern": "curl",
+      "equipmentType": "dumbbell",
+      "unilateral": false,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Stand tall, elbows pinned to the sides.",
+        "Curl both bells to the shoulders without swinging.",
+        "Turn the palms up as you lift.",
+        "Lower in three seconds; no bouncing at the bottom."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "db-one-arm-row",
+      "name": "One-arm Dumbbell Row",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "lats",
+        "upper back"
+      ],
+      "pattern": "pull_h",
+      "equipmentType": "dumbbell",
+      "unilateral": true,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "One hand and knee on the bench, back flat.",
+        "Pull the bell to the hip, elbow close to the body.",
+        "Squeeze the shoulder blade at the top.",
+        "Lower to a full stretch without twisting."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "db-lateral-raise",
+      "name": "Dumbbell Lateral Raise",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "shoulders"
+      ],
+      "pattern": "raise",
+      "equipmentType": "dumbbell",
+      "unilateral": false,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 1.25,
+      "repRange": [
+        12,
+        20
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Slight forward lean, bells in front of the thighs.",
+        "Raise out to the sides to shoulder height, elbows soft.",
+        "Lead with the elbows; pour the water out of the jugs.",
+        "Lower slowly; the weight should feel too light."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "db-incline-press",
+      "name": "Incline Dumbbell Press",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "chest",
+        "triceps",
+        "shoulders"
+      ],
+      "pattern": "push_v",
+      "equipmentType": "dumbbell",
+      "unilateral": false,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Bench at 30 degrees, feet planted, shoulder blades pinned.",
+        "Press up and slightly in; bells almost touch at the top.",
+        "Lower to the upper chest, elbows about 45 degrees out.",
+        "Keep the wrists stacked over the elbows."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "db-bulgarian-split-squat",
+      "name": "Bulgarian Split Squat",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "pattern": "squat",
+      "equipmentType": "dumbbell",
+      "unilateral": true,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": true,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Rear foot on the bench, front foot far enough forward to keep the shin near vertical.",
+        "!Lower until the rear knee nearly touches the floor; stop if the front knee complains.",
+        "Chest up, slight forward lean for glutes.",
+        "Drive through the whole front foot."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "db-skull-crusher",
+      "name": "Dumbbell Skull Crusher",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "triceps"
+      ],
+      "pattern": "push_v",
+      "equipmentType": "dumbbell",
+      "unilateral": false,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        10,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Lie on the bench, bells pressed over the shoulders, palms facing.",
+        "Bend only at the elbows; lower the bells beside the head.",
+        "Keep the upper arms still and pointed at the ceiling.",
+        "Extend without locking out hard."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "db-arnold-press",
+      "name": "Arnold Press",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "shoulders",
+        "triceps"
+      ],
+      "pattern": "push_v",
+      "equipmentType": "dumbbell",
+      "unilateral": false,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Start with the bells at the chin, palms facing you.",
+        "Rotate the palms out as you press overhead.",
+        "Finish with the arms straight, bells over the shoulders.",
+        "Reverse the turn on the way down, ribs down."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "db-pullover",
+      "name": "Dumbbell Pullover",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "lats",
+        "chest"
+      ],
+      "pattern": "pull_v",
+      "equipmentType": "dumbbell",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        10,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Lie across or along the bench, one bell held in both hands over the chest.",
+        "Lower behind the head with a slight elbow bend until the lats stretch.",
+        "Pull back over the chest with the lats, ribs down.",
+        "Light weight, slow tempo."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "plyo-box-jump",
+      "name": "Box Jump",
+      "category": "Plyo",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "pattern": "jump",
+      "equipmentType": "bodyweight",
+      "unilateral": false,
+      "loadMode": "height_cm",
+      "defaultIncrementKg": 5,
+      "repRange": [
+        3,
+        6
+      ],
+      "backCaution": false,
+      "kneeCaution": true,
+      "gated": false,
+      "note": "Weight = box height in cm.",
+      "cues": [
+        "!Step down from the box; never jump down.",
+        "Swing the arms, load the hips, jump and land with both feet flat on the box.",
+        "Land soft and quiet, knees over the toes.",
+        "Stand up fully on the box before stepping off."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "plyo-jump-squat",
+      "name": "Jump Squat",
+      "category": "Plyo",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "pattern": "jump",
+      "equipmentType": "bodyweight",
+      "unilateral": false,
+      "loadMode": "bodyweight_plus",
+      "defaultIncrementKg": 0,
+      "repRange": [
+        6,
+        10
+      ],
+      "backCaution": false,
+      "kneeCaution": true,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Quarter to half squat, then jump as high as you can.",
+        "!Land softly through the toes into the heels; absorb with bent knees.",
+        "Reset between reps; quality over speed.",
+        "Stop the set when the landings get loud."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "plyo-broad-jump",
+      "name": "Broad Jump",
+      "category": "Plyo",
+      "primaryMuscles": [
+        "glutes",
+        "quads",
+        "hamstrings"
+      ],
+      "pattern": "jump",
+      "equipmentType": "bodyweight",
+      "unilateral": false,
+      "loadMode": "bodyweight_plus",
+      "defaultIncrementKg": 0,
+      "repRange": [
+        3,
+        5
+      ],
+      "backCaution": false,
+      "kneeCaution": true,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Feet hip width, big arm swing back then forward.",
+        "Jump out, not up; land on both feet together.",
+        "!Stick the landing with bent knees and a flat back.",
+        "Walk back; no bounding straight into the next rep."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "plyo-lateral-bound",
+      "name": "Lateral Bound",
+      "category": "Plyo",
+      "primaryMuscles": [
+        "glutes",
+        "quads"
+      ],
+      "pattern": "jump",
+      "equipmentType": "bodyweight",
+      "unilateral": true,
+      "loadMode": "bodyweight_plus",
+      "defaultIncrementKg": 0,
+      "repRange": [
+        6,
+        10
+      ],
+      "backCaution": false,
+      "kneeCaution": true,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Push off one leg sideways, land on the other.",
+        "!Stick each landing for a count before the next bound.",
+        "Knee tracks over the foot, hips level.",
+        "Reps are per side."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "plyo-jump-rope",
+      "name": "Jump Rope",
+      "category": "Plyo",
+      "primaryMuscles": [
+        "calves"
+      ],
+      "pattern": "jump",
+      "equipmentType": "bodyweight",
+      "unilateral": false,
+      "loadMode": "timed",
+      "defaultIncrementKg": 0,
+      "repRange": [
+        60,
+        180
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Reps = seconds.",
+      "cues": [
+        "Elbows in, turn the rope from the wrists.",
+        "Small hops, land on the balls of the feet.",
+        "Relax the shoulders and breathe.",
+        "Reps are seconds."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "plyo-med-ball-slam",
+      "name": "Medicine Ball Slam",
+      "category": "Plyo",
+      "primaryMuscles": [
+        "core",
+        "lats"
+      ],
+      "pattern": "core",
+      "equipmentType": "bodyweight",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 1,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": true,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Weight = ball kg.",
+      "cues": [
+        "Ball overhead, rise onto the toes.",
+        "Slam it down in front of the feet using the whole body.",
+        "!Hinge, do not round the lower back to reach the ball.",
+        "Catch on the bounce or pick it up and reset."
       ],
       "visualId": null,
       "visualFrames": 0
