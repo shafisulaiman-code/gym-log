@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { db } from '../db'
 import {
   countSets,
@@ -22,6 +22,7 @@ import Picker from './Picker'
 import FinishSheet from './FinishSheet'
 import TechniqueSheet from './TechniqueSheet'
 import { nextSet, type NextSet } from '../nextSet'
+import { formatRest, restState, type Rest } from '../rest'
 import { cardFolded } from '../fold'
 
 type Props = { workoutId: string; onDone: () => void }
@@ -43,7 +44,15 @@ export default function Workout({ workoutId, onDone }: Props) {
 
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 1000)
-    return () => window.clearInterval(t)
+    // Timers are throttled while the screen is off; catch up on the first frame after unlock.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') setNow(Date.now())
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => {
+      window.clearInterval(t)
+      document.removeEventListener('visibilitychange', onVisible)
+    }
   }, [])
 
   useEffect(() => {
@@ -183,6 +192,7 @@ export default function Workout({ workoutId, onDone }: Props) {
   const exerciseOrder = [...new Set(sets.map((s) => s.exerciseId))]
   const { done, total } = countSets(sets)
   const up = nextSet(sets)
+  const rest = restState(sets, now)
 
   // The dock's ✓: same as ticking the row itself.
   function tick(row: SetRow) {
@@ -294,6 +304,7 @@ export default function Workout({ workoutId, onDone }: Props) {
         <UpNextDock
           up={up}
           ex={up ? exercises[up.row.exerciseId] : undefined}
+          rest={rest}
           onTick={() => up && tick(up.row)}
           onJump={() => up && jumpTo(up.row.exerciseId)}
           onFinish={() => setFinishing(true)}
@@ -323,20 +334,44 @@ export default function Workout({ workoutId, onDone }: Props) {
 function UpNextDock({
   up,
   ex,
+  rest,
   onTick,
   onJump,
   onFinish,
 }: {
   up: NextSet | null
   ex?: Exercise
+  rest: Rest | null
   onTick: () => void
   onJump: () => void
   onFinish: () => void
 }) {
   const [pop, setPop] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const kind = !up || !ex ? 'done' : 'up'
+
+  // The page's bottom padding follows the dock's real height, which changes between states.
+  useEffect(() => {
+    const el = rootRef.current
+    if (!el) return
+    const root = document.documentElement
+    const write = () => root.style.setProperty('--dock-h', `${el.offsetHeight + 24}px`)
+    write()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(write)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [kind])
+  useEffect(
+    () => () => {
+      document.documentElement.style.removeProperty('--dock-h')
+    },
+    [],
+  )
+
   if (!up || !ex) {
     return (
-      <div className="dock done">
+      <div className="dock done" ref={rootRef}>
         <div className="dock-body">
           <div className="dock-kicker">All sets ticked</div>
           <div className="dock-name">Nice work</div>
@@ -350,22 +385,40 @@ function UpNextDock({
   const label = up.number === 0 ? 'Warm-up' : `Set ${up.number} of ${up.total}`
   const text = formatLast(ex, [{ ...up.row, isWarmup: false }]).replace(/^Last: /, '')
   const i = text.indexOf(' × ')
+  const load =
+    i === -1 ? (
+      text
+    ) : (
+      <>
+        <b>{text.slice(0, i)}</b> × {text.slice(i + 3)}
+      </>
+    )
+  const restLabel = up.number === 0 ? 'warm-up' : `set ${up.number}`
   return (
-    <div className="dock">
+    <div className={`dock${rest ? ' resting' : ''}${rest?.over ? ' over' : ''}`} ref={rootRef}>
       <button type="button" className="dock-body" onClick={onJump} aria-label={`Scroll to ${ex.name}`}>
-        <div className="dock-kicker">Up next · {label}</div>
-        <div className="dock-name">{ex.name}</div>
-        <div className="dock-meta">
-          {i === -1 ? text : (
-            <>
-              <b>{text.slice(0, i)}</b> × {text.slice(i + 3)}
-            </>
-          )}
-        </div>
+        {rest ? (
+          <>
+            <div className="dock-kicker">
+              {rest.over ? 'Rest · over' : rest.target === 120 ? 'Rest · drink up' : 'Rest'}
+            </div>
+            <div className="dock-time num">{formatRest(rest.remaining)}</div>
+            <div className="dock-meta">
+              Next · {ex.name} {restLabel} · {load}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="dock-kicker">Up next · {label}</div>
+            <div className="dock-name">{ex.name}</div>
+            <div className="dock-meta">{load}</div>
+          </>
+        )}
       </button>
       <button
         type="button"
-        className={`dock-check ${pop ? 'pop' : ''}`}
+        className={`dock-check${pop ? ' pop' : ''}${rest ? ' ring' : ''}`}
+        style={rest ? ({ '--ring': rest.over ? 1 : rest.remaining / rest.target } as CSSProperties) : undefined}
         aria-label={`Complete ${ex.name} ${label}`}
         onClick={() => {
           setPop(true)

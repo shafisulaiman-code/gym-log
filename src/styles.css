@@ -1221,7 +1221,7 @@ button.card.folded {
 /* Up next dock: the next unticked set and one big ✓, fixed above the thumb.
    z-index sits above the sticky header (5) and below sheets and overlays (10+). */
 .screen.workout {
-  padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--dock-h, 120px) + env(safe-area-inset-bottom));
 }
 
 .dock {
@@ -1323,6 +1323,57 @@ button.card.folded {
   min-height: var(--tap);
   padding: 0 22px;
   border-radius: 18px;
+}
+
+/* Rest state: the countdown takes the name's slot, a 3 px ring around the ✓ drains with it. */
+.dock-time {
+  font-size: 34px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.dock.over .dock-time,
+.dock.over .dock-kicker {
+  color: var(--warn);
+}
+
+.dock.resting .dock-meta {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dock-check.ring {
+  position: relative;
+}
+
+.dock-check.ring::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  padding: 3px;
+  border-radius: 24px;
+  background: conic-gradient(var(--accent) calc(var(--ring, 1) * 360deg), transparent 0);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.dock.over .dock-check.ring::before {
+  background: var(--warn);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock-check.ring::before {
+    background: var(--accent);
+  }
+  .dock.over .dock-check.ring::before {
+    background: var(--warn);
+  }
 }
 
 /* Technique sheet */
