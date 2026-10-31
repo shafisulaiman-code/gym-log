@@ -93,7 +93,9 @@ Rules:
 
 ## Do not build
 
-Social features. In-app AI or chat. Nutrition. Wearable or Health Connect integration. Accounts, auth, login. Multi-device sync. Templates or routine builder. Drop sets. Plate calculator. Exercise images or videos. Dark-mode theming polish. Any settings screen beyond "default outlet". A backend of any kind.
+Social features. In-app AI or chat. Nutrition. Wearable or Health Connect integration. Accounts, auth, login. Multi-device sync. Templates or routine builder. Drop sets. Plate calculator. Dark-mode theming polish. Any settings screen beyond "default outlet". A backend of any kind.
+
+Removed from this list on 2026-10-31 after the first click-through: exercise technique visuals (a looping anatomy-style animation plus written cues per exercise, bundled offline). See `docs/superpowers/specs/2026-10-31-phase1-redesign-design.md`.
 
 ## Working rules for Claude Code
 

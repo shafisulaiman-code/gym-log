@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { db } from '../db'
 import {
+  countSets,
+  distinctWeights,
   formatLast,
   getOrCreateEquipment,
   keyedByEquipment,
@@ -12,7 +14,11 @@ import type { Equipment, Exercise, Outlet, SetRow, Workout as WorkoutT } from '.
 import { nextSeq, sgIso, shortOutlet, uuid } from '../util'
 import Stepper from '../components/Stepper'
 import BellChips from '../components/BellChips'
+import StepPill from '../components/StepPill'
+import Thumb from '../components/Thumb'
 import Picker from './Picker'
+import FinishSheet from './FinishSheet'
+import TechniqueSheet from './TechniqueSheet'
 
 type Props = { workoutId: string; onDone: () => void }
 
@@ -23,7 +29,10 @@ export default function Workout({ workoutId, onDone }: Props) {
   const [equipment, setEquipment] = useState<Record<string, Equipment>>({})
   const [sets, setSets] = useState<SetRow[]>([])
   const [lastLines, setLastLines] = useState<Record<string, string>>({})
+  const [bellExtras, setBellExtras] = useState<Record<string, number[]>>({})
   const [picking, setPicking] = useState(false)
+  const [finishing, setFinishing] = useState(false)
+  const [techniqueFor, setTechniqueFor] = useState<Exercise | null>(null)
   const [now, setNow] = useState(Date.now())
 
   useEffect(() => {
@@ -51,10 +60,12 @@ export default function Workout({ workoutId, onDone }: Props) {
     rows.sort((a, b) => a.seq - b.seq)
 
     const lines: Record<string, string> = {}
+    const extras: Record<string, number[]> = {}
     for (const exId of new Set(rows.map((r) => r.exerciseId))) {
       const ex = exMap[exId]
       const eqId = rows.find((r) => r.exerciseId === exId)?.equipmentId
       lines[exId] = formatLast(ex, await lastSession(ex, eqId, workoutId))
+      if (ex.equipmentType === 'kettlebell') extras[exId] = await distinctWeights(exId)
     }
 
     setWorkout(w)
@@ -63,6 +74,7 @@ export default function Workout({ workoutId, onDone }: Props) {
     setEquipment(Object.fromEntries(eqList.map((e) => [e.id, e])))
     setSets(rows)
     setLastLines(lines)
+    setBellExtras(extras)
   }
 
   // Every change is written straight to the database: there is no Save button.
@@ -91,15 +103,21 @@ export default function Workout({ workoutId, onDone }: Props) {
     setExercises((prev) => ({ ...prev, [ex.id]: ex }))
     if (eq) setEquipment((prev) => ({ ...prev, [eq.id]: eq }))
     setLastLines((prev) => ({ ...prev, [ex.id]: formatLast(ex, last) }))
+    if (ex.equipmentType === 'kettlebell') {
+      const extra = await distinctWeights(ex.id)
+      setBellExtras((prev) => ({ ...prev, [ex.id]: extra }))
+    }
     setSets((prev) => [...prev, ...rows])
     window.setTimeout(() => {
       document.getElementById(`card-${ex.id}`)?.scrollIntoView({ behavior: 'smooth' })
     }, 50)
   }
 
+  // "+ Set" copies the last real row; if only ghosts exist, the last ghost.
   function addSet(exerciseId: string) {
     const rows = sets.filter((s) => s.exerciseId === exerciseId)
-    const prev = rows[rows.length - 1]
+    const real = rows.filter((r) => !r.ghost)
+    const prev = (real.length > 0 ? real : rows)[(real.length > 0 ? real : rows).length - 1]
     const row: SetRow = {
       id: uuid(),
       workoutId,
@@ -127,19 +145,24 @@ export default function Workout({ workoutId, onDone }: Props) {
     db.sets.delete(last.id)
   }
 
+  function setStep(eq: Equipment, stackStepKg: number) {
+    const next = { ...eq, stackStepKg }
+    setEquipment((prev) => ({ ...prev, [eq.id]: next }))
+    db.equipment.update(eq.id, { stackStepKg })
+  }
+
   function setNotes(notes: string) {
     if (!workout) return
     setWorkout({ ...workout, notes })
     db.workouts.update(workout.id, { notes })
   }
 
+  // Deletes unticked and ghost rows; a workout with nothing ticked is removed entirely.
   async function finish() {
     if (!workout) return
-    if (!confirm('Finish workout?')) return
-    const unfinished = sets.filter((s) => !s.completedAt).map((s) => s.id)
-    await db.sets.bulkDelete(unfinished)
-    if (sets.length === unfinished.length) {
-      // Nothing was logged: don't keep an empty workout.
+    const discard = sets.filter((s) => !s.completedAt).map((s) => s.id)
+    await db.sets.bulkDelete(discard)
+    if (sets.length === discard.length) {
       await db.workouts.delete(workout.id)
     } else {
       await db.workouts.update(workout.id, { endedAt: sgIso() })
@@ -150,17 +173,21 @@ export default function Workout({ workoutId, onDone }: Props) {
   if (!workout || !outlet) return null
 
   const exerciseOrder = [...new Set(sets.map((s) => s.exerciseId))]
+  const { done, total } = countSets(sets)
 
   return (
     <div className="screen workout">
       <header className="workout-header">
-        <div>
-          <div className="header-outlet">{shortOutlet(outlet.name)}</div>
-          <div className="header-time">{elapsed(workout.startedAt, now)}</div>
+        <div className="row">
+          <div>
+            <div className="header-outlet">{shortOutlet(outlet.name)}</div>
+            <div className="header-time">{elapsed(workout.startedAt, now)}</div>
+          </div>
+          <div className="header-pill">{total === 0 ? '0 sets' : `${done} of ${total} sets`}</div>
         </div>
-        <button type="button" className="btn finish" onClick={finish}>
-          Finish
-        </button>
+        <div className="progress" aria-hidden="true">
+          <i style={{ width: total === 0 ? '0%' : `${(done / total) * 100}%` }} />
+        </div>
       </header>
 
       {exerciseOrder.map((exId) => {
@@ -170,8 +197,16 @@ export default function Workout({ workoutId, onDone }: Props) {
         let working = 0
         return (
           <section className="card" key={exId} id={`card-${exId}`}>
-            <h2>{ex.name}</h2>
-            <div className="last-line">{lastLines[exId]}</div>
+            <div className="ex-head">
+              <Thumb ex={ex} size={64} onClick={() => setTechniqueFor(ex)} />
+              <button type="button" className="ex-title" onClick={() => setTechniqueFor(ex)}>
+                <h2>{ex.name}</h2>
+                <LastLine text={lastLines[exId]} />
+              </button>
+              {eq && keyedByEquipment(ex) && (
+                <StepPill value={weightStep(ex, eq)} onChange={(kg) => setStep(eq, kg)} />
+              )}
+            </div>
             {ex.note && <div className="ex-note">{ex.note}</div>}
             {rows.map((row) => (
               <SetRowView
@@ -179,6 +214,7 @@ export default function Workout({ workoutId, onDone }: Props) {
                 row={row}
                 ex={ex}
                 step={weightStep(ex, eq)}
+                bellExtra={bellExtras[exId] ?? []}
                 number={row.isWarmup ? 0 : ++working}
                 onChange={saveRow}
               />
@@ -195,8 +231,8 @@ export default function Workout({ workoutId, onDone }: Props) {
         )
       })}
 
-      <button type="button" className="btn primary big" onClick={() => setPicking(true)}>
-        Add exercise
+      <button type="button" className="btn secondary big" onClick={() => setPicking(true)}>
+        + Add exercise
       </button>
 
       <label className="field">
@@ -209,9 +245,37 @@ export default function Workout({ workoutId, onDone }: Props) {
         />
       </label>
 
+      <button type="button" className="btn quiet finish" onClick={() => setFinishing(true)}>
+        Finish workout
+      </button>
+
+      <TechniqueSheet ex={techniqueFor} onClose={() => setTechniqueFor(null)} />
+
+      <FinishSheet
+        open={finishing}
+        onClose={() => setFinishing(false)}
+        rows={sets}
+        exercises={exercises}
+        startedAt={workout.startedAt}
+        onFinish={finish}
+      />
+
       {picking && (
         <Picker outlet={outlet} onPick={addExercise} onClose={() => setPicking(false)} />
       )}
+    </div>
+  )
+}
+
+// "Last: 100 kg × 12, 12, 10" with the load in --text and the rest muted.
+function LastLine({ text }: { text?: string }) {
+  if (!text) return null
+  const body = text.replace(/^Last: /, '')
+  const i = body.indexOf(' × ')
+  if (i === -1) return <div className="last-line">Last {body}</div>
+  return (
+    <div className="last-line">
+      Last <b>{body.slice(0, i)}</b> × {body.slice(i + 3)}
     </div>
   )
 }
@@ -220,36 +284,47 @@ function SetRowView({
   row,
   ex,
   step,
+  bellExtra,
   number,
   onChange,
 }: {
   row: SetRow
   ex: Exercise
   step: number
+  bellExtra: number[]
   number: number
   onChange: (row: SetRow) => void
 }) {
+  const [pop, setPop] = useState(false)
   const timed = ex.loadMode === 'timed'
   const kettlebell = ex.equipmentType === 'kettlebell'
   const bodyweight = ex.loadMode === 'bodyweight_plus'
   const noLoad = timed && ex.equipmentType === 'bodyweight' // e.g. plank
   const done = !!row.completedAt
 
+  // Any edit on a ghost row makes it real without completing it.
+  function edit(patch: Partial<SetRow>) {
+    onChange({ ...row, ...patch, ghost: false })
+  }
+
   function toggleDone() {
     if (done) {
       onChange({ ...row, completedAt: undefined })
     } else {
       navigator.vibrate?.(40)
-      onChange({ ...row, completedAt: sgIso() })
+      setPop(true)
+      window.setTimeout(() => setPop(false), 200)
+      onChange({ ...row, ghost: false, completedAt: sgIso() })
     }
   }
 
+  const cls = ['set-row', done ? 'done' : '', row.isWarmup ? 'warmup' : '', row.ghost ? 'ghost' : '']
   return (
-    <div className={`set-row ${done ? 'done' : ''} ${row.isWarmup ? 'warmup' : ''}`}>
+    <div className={cls.join(' ').trim()}>
       <button
         type="button"
         className="badge"
-        onClick={() => onChange({ ...row, isWarmup: !row.isWarmup })}
+        onClick={() => edit({ isWarmup: !row.isWarmup })}
         aria-label="Toggle warm-up"
       >
         {row.isWarmup ? 'W' : number}
@@ -257,14 +332,18 @@ function SetRowView({
       <div className="set-controls">
         {!noLoad &&
           (kettlebell ? (
-            <BellChips value={row.weightKg} onChange={(kg) => onChange({ ...row, weightKg: kg })} />
+            <BellChips
+              value={row.weightKg}
+              extra={bellExtra}
+              onChange={(kg) => edit({ weightKg: kg })}
+            />
           ) : (
             <Stepper
               value={row.weightKg ?? 0}
               step={step}
               unit="kg"
               prefix={bodyweight ? '+' : ''}
-              onChange={(v) => onChange({ ...row, weightKg: v ?? 0 })}
+              onChange={(v) => edit({ weightKg: v ?? 0 })}
             />
           ))}
         {timed ? (
@@ -272,18 +351,24 @@ function SetRowView({
             value={row.durationSec ?? 30}
             step={5}
             unit="sec"
-            onChange={(v) => onChange({ ...row, durationSec: v ?? 0 })}
+            onChange={(v) => edit({ durationSec: v ?? 0 })}
           />
         ) : (
           <Stepper
             value={row.reps ?? 10}
             step={1}
             unit="reps"
-            onChange={(v) => onChange({ ...row, reps: v ?? 0 })}
+            onChange={(v) => edit({ reps: v ?? 0 })}
           />
         )}
       </div>
-      <button type="button" className="check" onClick={toggleDone} aria-label="Complete set">
+      <button
+        type="button"
+        className={`check ${pop ? 'pop' : ''}`}
+        onClick={toggleDone}
+        aria-label={done ? 'Mark set not done' : 'Complete set'}
+        aria-pressed={done}
+      >
         ✓
       </button>
     </div>

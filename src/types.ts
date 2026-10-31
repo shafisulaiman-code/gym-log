@@ -30,6 +30,9 @@ export interface Exercise {
   gated: boolean
   note: string
   custom?: boolean // true for machines added from the picker
+  cues: string[] // short technique lines; a leading "!" marks a caution
+  visualId: string | null // Everkinetic drawing this exercise uses (Commons title stem), or null
+  visualFrames: number // 0, 1 or 2 frames at public/visuals/<id>-<n>.webp
 }
 
 export interface Equipment {
@@ -65,6 +68,7 @@ export interface SetRow {
   painFlag?: 'back' | 'knee'
   completedAt?: string
   seq: number // creation order, used to order cards and rows
+  ghost?: boolean // suggested from last session, not yet confirmed or edited
 }
 
 export type CardioModality = 'treadmill_z2' | 'treadmill_4x4' | 'bike'

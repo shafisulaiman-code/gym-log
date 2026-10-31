@@ -14,8 +14,8 @@ export default defineConfig({
         name: 'Gym Log',
         short_name: 'Gym Log',
         description: 'Offline workout logger',
-        theme_color: '#111111',
-        background_color: '#111111',
+        theme_color: '#0b0b0d',
+        background_color: '#0b0b0d',
         display: 'standalone',
         orientation: 'portrait',
         icons: [
@@ -25,7 +25,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,png,svg}'],
+        globPatterns: ['**/*.{js,css,html,png,svg,woff2,webp}'],
       },
     }),
   ],

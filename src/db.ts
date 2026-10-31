@@ -33,6 +33,18 @@ class GymDB extends Dexie {
       bodyweight: 'id, date',
       sync_log: 'id, workoutId', // unused until Phase 4
     })
+    // v2: SetRow.ghost, Exercise.cues and Exercise.visualId added. No index changes,
+    // no data to migrate (nothing in production yet); the bump records the change.
+    this.version(2).stores({
+      outlets: 'id',
+      exercises: 'id, category',
+      equipment: 'id, exerciseId, outletId, [exerciseId+outletId]',
+      workouts: 'id, startedAt, outletId, type',
+      sets: 'id, workoutId, exerciseId, equipmentId',
+      cardio_sessions: 'id, workoutId, modality',
+      bodyweight: 'id, date',
+      sync_log: 'id, workoutId',
+    })
   }
 }
 
@@ -45,7 +57,7 @@ export const cardioModalities = seed.cardioModalities
 // with the latest seed.json, custom exercises (random ids) are left alone.
 export async function setupDb() {
   await db.outlets.bulkPut(seed.outlets)
-  await db.exercises.bulkPut(seed.exercises as Exercise[])
+  await db.exercises.bulkPut(seed.exercises as unknown as Exercise[])
   try {
     if (navigator.storage?.persist && !(await navigator.storage.persisted())) {
       await navigator.storage.persist()

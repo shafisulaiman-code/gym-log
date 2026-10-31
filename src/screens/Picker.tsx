@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react'
 import { db } from '../db'
 import type { Exercise, Outlet } from '../types'
+import { useLayer } from '../useLayer'
+import { popLayer } from '../nav'
+import Thumb from '../components/Thumb'
 import CustomMachineSheet from './CustomMachineSheet'
 
 type Props = {
@@ -18,6 +21,9 @@ export default function Picker({ outlet, onPick, onClose }: Props) {
   const [customHere, setCustomHere] = useState<Record<string, string>>({})
   const [query, setQuery] = useState('')
   const [addingCustom, setAddingCustom] = useState(false)
+
+  // The picker is a history layer: back closes it and stays on the workout.
+  useLayer(true, onClose)
 
   useEffect(() => {
     load()
@@ -62,22 +68,6 @@ export default function Picker({ outlet, onPick, onClose }: Props) {
   const gated = visible.filter((e) => e.gated && matches(e))
   const recentShown = recent.filter(matches)
 
-  if (addingCustom) {
-    return (
-      <CustomMachineSheet
-        outlet={outlet}
-        onCancel={() => setAddingCustom(false)}
-        onSaved={(exerciseId, equipmentId, savedOutletId) => {
-          if (savedOutletId === outlet.id) {
-            onPick(exerciseId, equipmentId)
-          } else {
-            setAddingCustom(false)
-          }
-        }}
-      />
-    )
-  }
-
   return (
     <div className="overlay">
       <div className="overlay-header">
@@ -88,7 +78,7 @@ export default function Picker({ outlet, onPick, onClose }: Props) {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button type="button" className="btn secondary" onClick={onClose}>
+        <button type="button" className="btn secondary" onClick={popLayer}>
           Close
         </button>
       </div>
@@ -130,6 +120,16 @@ export default function Picker({ outlet, onPick, onClose }: Props) {
           ))}
         </details>
       )}
+
+      <CustomMachineSheet
+        open={addingCustom}
+        outlet={outlet}
+        onClose={() => setAddingCustom(false)}
+        onSaved={(exerciseId, equipmentId, savedOutletId) => {
+          setAddingCustom(false)
+          if (savedOutletId === outlet.id) onPick(exerciseId, equipmentId)
+        }}
+      />
     </div>
   )
 }
@@ -137,7 +137,8 @@ export default function Picker({ outlet, onPick, onClose }: Props) {
 function ExerciseItem({ ex, onClick }: { ex: Exercise; onClick: () => void }) {
   return (
     <button type="button" className="list-item" onClick={onClick}>
-      <span>{ex.name}</span>
+      <Thumb ex={ex} size={44} />
+      <span className="name">{ex.name}</span>
       <span className="tags">
         {ex.backCaution && <span className="tag">back</span>}
         {ex.kneeCaution && <span className="tag">knee</span>}

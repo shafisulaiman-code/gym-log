@@ -2,16 +2,19 @@ import { useEffect, useState } from 'react'
 import { db } from '../db'
 import type { Equipment, Exercise, Outlet } from '../types'
 import { shortOutlet, uuid } from '../util'
+import { parseWeight } from '../weights'
+import BottomSheet, { closeSheet } from '../components/BottomSheet'
 
 type Props = {
+  open: boolean
   outlet: Outlet
-  onCancel: () => void
+  onClose: () => void
   onSaved: (exerciseId: string, equipmentId: string, outletId: string) => void
 }
 
-const STEP_CHOICES = [2.5, 5, 7, 10]
+const STEP_CHOICES = [1.25, 2.5, 5, 10]
 
-export default function CustomMachineSheet({ outlet, onCancel, onSaved }: Props) {
+export default function CustomMachineSheet({ open, outlet, onClose, onSaved }: Props) {
   const [outlets, setOutlets] = useState<Outlet[]>([])
   const [name, setName] = useState('')
   const [outletId, setOutletId] = useState(outlet.id)
@@ -20,16 +23,16 @@ export default function CustomMachineSheet({ outlet, onCancel, onSaved }: Props)
   const [startKg, setStartKg] = useState('')
 
   useEffect(() => {
-    db.outlets.toArray().then(setOutlets)
-  }, [])
+    if (open) db.outlets.toArray().then(setOutlets)
+  }, [open])
 
-  const stepKg = step === 'custom' ? parseFloat(customStep) : step
+  const stepKg = step === 'custom' ? (parseWeight(customStep) ?? 0) : step
   const canSave = name.trim() !== '' && stepKg > 0
 
   async function save() {
     if (!canSave) return
     const chosen = outlets.find((o) => o.id === outletId) ?? outlet
-    const start = parseFloat(startKg)
+    const start = parseWeight(startKg)
     const ex: Exercise = {
       id: uuid(),
       name: name.trim(),
@@ -46,6 +49,9 @@ export default function CustomMachineSheet({ outlet, onCancel, onSaved }: Props)
       gated: false,
       note: '',
       custom: true,
+      cues: [],
+      visualId: null,
+      visualFrames: 0,
     }
     const eq: Equipment = {
       id: uuid(),
@@ -53,7 +59,7 @@ export default function CustomMachineSheet({ outlet, onCancel, onSaved }: Props)
       outletId: chosen.id,
       label: `${ex.name} @ ${shortOutlet(chosen.name)}`,
       stackStepKg: stepKg,
-      stackStartKg: Number.isNaN(start) ? undefined : start,
+      stackStartKg: start ?? undefined,
     }
     await db.exercises.add(ex)
     await db.equipment.add(eq)
@@ -61,9 +67,7 @@ export default function CustomMachineSheet({ outlet, onCancel, onSaved }: Props)
   }
 
   return (
-    <div className="overlay">
-      <h2>Custom machine</h2>
-
+    <BottomSheet open={open} onClose={onClose} title="Custom machine">
       <label className="field">
         <span>Name</span>
         <input
@@ -88,12 +92,13 @@ export default function CustomMachineSheet({ outlet, onCancel, onSaved }: Props)
 
       <div className="field">
         <span>Stack step (kg)</span>
-        <div className="chip-row">
+        <div className="chip-row" style={{ flexWrap: 'nowrap' }}>
           {STEP_CHOICES.map((s) => (
             <button
               key={s}
               type="button"
               className={`chip ${step === s ? 'selected' : ''}`}
+              style={{ flex: 1, minWidth: 0, padding: 0 }}
               onClick={() => setStep(s)}
             >
               {s}
@@ -101,10 +106,12 @@ export default function CustomMachineSheet({ outlet, onCancel, onSaved }: Props)
           ))}
           <button
             type="button"
-            className={`chip ${step === 'custom' ? 'selected' : ''}`}
+            className={`chip more ${step === 'custom' ? 'selected' : ''}`}
+            style={{ flex: 1, minWidth: 0, padding: 0 }}
             onClick={() => setStep('custom')}
+            aria-label="Custom step"
           >
-            custom
+            …
           </button>
         </div>
         {step === 'custom' && (
@@ -115,6 +122,7 @@ export default function CustomMachineSheet({ outlet, onCancel, onSaved }: Props)
             value={customStep}
             onChange={(e) => setCustomStep(e.target.value)}
             placeholder="Step kg"
+            style={{ marginTop: 8 }}
           />
         )}
       </div>
@@ -130,14 +138,14 @@ export default function CustomMachineSheet({ outlet, onCancel, onSaved }: Props)
         />
       </label>
 
-      <div className="card-actions">
-        <button type="button" className="btn secondary" onClick={onCancel}>
+      <div className="sheet-actions">
+        <button type="button" className="btn secondary" onClick={closeSheet}>
           Cancel
         </button>
         <button type="button" className="btn primary" disabled={!canSave} onClick={save}>
           Save & add
         </button>
       </div>
-    </div>
+    </BottomSheet>
   )
 }

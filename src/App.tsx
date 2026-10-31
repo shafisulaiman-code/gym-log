@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { findActiveWorkout, setupDb } from './db'
+import { popAll, pushLayer } from './nav'
 import Home from './screens/Home'
 import Workout from './screens/Workout'
 import Cardio from './screens/Cardio'
@@ -14,8 +15,6 @@ type Screen =
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>({ name: 'loading' })
-  // Tracks whether we pushed a browser history entry, so Android's back button returns Home.
-  const pushed = useRef(false)
 
   useEffect(() => {
     let cancelled = false
@@ -27,28 +26,20 @@ export default function App() {
         if (active) open({ name: 'workout', workoutId: active.id })
         else setScreen({ name: 'home' })
       })
-    const onPop = () => {
-      pushed.current = false
-      setScreen({ name: 'home' })
-    }
-    window.addEventListener('popstate', onPop)
     return () => {
       cancelled = true
-      window.removeEventListener('popstate', onPop)
     }
   }, [])
 
+  // Every non-home screen is one history layer, so Android back returns Home.
   function open(next: Screen) {
-    if (!pushed.current) {
-      history.pushState(null, '')
-      pushed.current = true
-    }
+    pushLayer(() => setScreen({ name: 'home' }))
     setScreen(next)
   }
 
+  // Home is depth 0; a screen may have a sheet or picker open above it, so pop everything.
   function goHome() {
-    if (pushed.current) history.back() // triggers popstate, which shows Home
-    else setScreen({ name: 'home' })
+    popAll()
   }
 
   switch (screen.name) {

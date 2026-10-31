@@ -1,56 +1,1006 @@
 {
   "outlets": [
-    { "id": "af-tampines-west", "name": "AF Tampines West" },
-    { "id": "af-tampines-central", "name": "AF Tampines Central" },
-    { "id": "af-hong-lim", "name": "AF Hong Lim Complex" },
-    { "id": "af-orchard-cineleisure", "name": "AF Orchard Cineleisure" },
-    { "id": "af-orchard-gateway", "name": "AF Orchard Gateway" }
+    {
+      "id": "af-tampines-west",
+      "name": "AF Tampines West"
+    },
+    {
+      "id": "af-tampines-central",
+      "name": "AF Tampines Central"
+    },
+    {
+      "id": "af-hong-lim",
+      "name": "AF Hong Lim Complex"
+    },
+    {
+      "id": "af-orchard-cineleisure",
+      "name": "AF Orchard Cineleisure"
+    },
+    {
+      "id": "af-orchard-gateway",
+      "name": "AF Orchard Gateway"
+    }
   ],
-  "kettlebellSizesKg": [8, 12, 16, 20, 24, 28, 32],
+  "kettlebellSizesKg": [
+    8,
+    12,
+    16,
+    20,
+    24,
+    28,
+    32
+  ],
   "exercises": [
-    { "id": "kb-swing", "name": "Kettlebell Swing (two-hand)", "category": "Kettlebell", "primaryMuscles": ["glutes", "hamstrings"], "pattern": "hinge", "equipmentType": "kettlebell", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 4, "repRange": [10, 20], "backCaution": true, "kneeCaution": false, "gated": false, "note": "Hinge, not squat. Stop if lower back pumps." },
-    { "id": "kb-goblet-squat", "name": "Goblet Squat", "category": "Kettlebell", "primaryMuscles": ["quads", "glutes"], "pattern": "squat", "equipmentType": "kettlebell", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 4, "repRange": [8, 15], "backCaution": false, "kneeCaution": true, "gated": false, "note": "" },
-    { "id": "kb-sa-press", "name": "Kettlebell Single-arm Press", "category": "Kettlebell", "primaryMuscles": ["shoulders", "triceps"], "pattern": "push_v", "equipmentType": "kettlebell", "unilateral": true, "loadMode": "per_hand", "defaultIncrementKg": 4, "repRange": [5, 10], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "kb-sa-row", "name": "Kettlebell Single-arm Row", "category": "Kettlebell", "primaryMuscles": ["lats", "upper back"], "pattern": "pull_h", "equipmentType": "kettlebell", "unilateral": true, "loadMode": "per_hand", "defaultIncrementKg": 4, "repRange": [8, 15], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "kb-carry", "name": "Kettlebell Carry (suitcase or farmer)", "category": "Kettlebell", "primaryMuscles": ["core", "grip"], "pattern": "carry", "equipmentType": "kettlebell", "unilateral": true, "loadMode": "timed", "defaultIncrementKg": 4, "repRange": [30, 60], "backCaution": false, "kneeCaution": false, "gated": false, "note": "Reps = seconds." },
-    { "id": "kb-clean", "name": "Kettlebell Clean", "category": "Kettlebell", "primaryMuscles": ["glutes", "upper back"], "pattern": "hinge", "equipmentType": "kettlebell", "unilateral": true, "loadMode": "per_hand", "defaultIncrementKg": 4, "repRange": [5, 10], "backCaution": true, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "kb-deadlift", "name": "Kettlebell Deadlift", "category": "Kettlebell", "primaryMuscles": ["glutes", "hamstrings"], "pattern": "hinge", "equipmentType": "kettlebell", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 4, "repRange": [8, 15], "backCaution": true, "kneeCaution": false, "gated": false, "note": "Entry-level hinge. Build here before barbell." },
-    { "id": "kb-halo", "name": "Kettlebell Halo", "category": "Kettlebell", "primaryMuscles": ["shoulders", "core"], "pattern": "iso", "equipmentType": "kettlebell", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 4, "repRange": [8, 12], "backCaution": false, "kneeCaution": false, "gated": false, "note": "Warm-up movement." },
-
-    { "id": "m-leg-press", "name": "Leg Press", "category": "Machine", "primaryMuscles": ["quads", "glutes"], "pattern": "squat", "equipmentType": "machine_plate", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 10, "repRange": [10, 15], "backCaution": true, "kneeCaution": true, "gated": false, "note": "Keep lower back on the pad. Don't chase depth." },
-    { "id": "m-chest-press", "name": "Chest Press", "category": "Machine", "primaryMuscles": ["chest", "triceps"], "pattern": "push_h", "equipmentType": "machine_selectorised", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 5, "repRange": [8, 12], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "m-lat-pulldown", "name": "Lat Pulldown", "category": "Machine", "primaryMuscles": ["lats", "biceps"], "pattern": "pull_v", "equipmentType": "machine_selectorised", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 5, "repRange": [8, 12], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "m-seated-row", "name": "Seated Row (machine)", "category": "Machine", "primaryMuscles": ["upper back", "lats"], "pattern": "pull_h", "equipmentType": "machine_selectorised", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 5, "repRange": [8, 12], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "m-shoulder-press", "name": "Shoulder Press (machine)", "category": "Machine", "primaryMuscles": ["shoulders", "triceps"], "pattern": "push_v", "equipmentType": "machine_selectorised", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 5, "repRange": [8, 12], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "m-leg-curl", "name": "Leg Curl", "category": "Machine", "primaryMuscles": ["hamstrings"], "pattern": "hinge", "equipmentType": "machine_selectorised", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 5, "repRange": [10, 15], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "m-leg-extension", "name": "Leg Extension", "category": "Machine", "primaryMuscles": ["quads"], "pattern": "squat", "equipmentType": "machine_selectorised", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 5, "repRange": [12, 20], "backCaution": false, "kneeCaution": true, "gated": false, "note": "Light, high reps. Stop at knee pain, not discomfort." },
-    { "id": "m-pec-fly-rear-delt", "name": "Pec Fly / Rear Delt", "category": "Machine", "primaryMuscles": ["chest", "rear delts"], "pattern": "push_h", "equipmentType": "machine_selectorised", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 5, "repRange": [12, 15], "backCaution": false, "kneeCaution": false, "gated": false, "note": "Log fly and rear delt as separate custom machines if you do both." },
-    { "id": "m-hip-abd-add", "name": "Hip Abductor / Adductor", "category": "Machine", "primaryMuscles": ["glutes", "adductors"], "pattern": "iso", "equipmentType": "machine_selectorised", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 5, "repRange": [12, 20], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-
-    { "id": "c-cable-row", "name": "Cable Row", "category": "Cable", "primaryMuscles": ["upper back", "lats"], "pattern": "pull_h", "equipmentType": "cable", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 5, "repRange": [8, 12], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "c-face-pull", "name": "Face Pull", "category": "Cable", "primaryMuscles": ["rear delts", "upper back"], "pattern": "pull_h", "equipmentType": "cable", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 2.5, "repRange": [12, 20], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "c-tricep-pushdown", "name": "Tricep Pushdown", "category": "Cable", "primaryMuscles": ["triceps"], "pattern": "iso", "equipmentType": "cable", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 2.5, "repRange": [10, 15], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "c-pallof-press", "name": "Pallof Press", "category": "Cable", "primaryMuscles": ["core"], "pattern": "core", "equipmentType": "cable", "unilateral": true, "loadMode": "total", "defaultIncrementKg": 2.5, "repRange": [10, 15], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-
-    { "id": "db-rdl", "name": "Dumbbell Romanian Deadlift", "category": "Free weight", "primaryMuscles": ["hamstrings", "glutes"], "pattern": "hinge", "equipmentType": "dumbbell", "unilateral": false, "loadMode": "per_hand", "defaultIncrementKg": 2.5, "repRange": [8, 12], "backCaution": true, "kneeCaution": false, "gated": false, "note": "Hinge technique first. This is the gate for barbell deadlift." },
-    { "id": "db-bench", "name": "Dumbbell Bench Press", "category": "Free weight", "primaryMuscles": ["chest", "triceps"], "pattern": "push_h", "equipmentType": "dumbbell", "unilateral": false, "loadMode": "per_hand", "defaultIncrementKg": 2.5, "repRange": [8, 12], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "db-split-squat", "name": "Dumbbell Split Squat", "category": "Free weight", "primaryMuscles": ["quads", "glutes"], "pattern": "squat", "equipmentType": "dumbbell", "unilateral": true, "loadMode": "per_hand", "defaultIncrementKg": 2.5, "repRange": [8, 12], "backCaution": false, "kneeCaution": true, "gated": false, "note": "" },
-    { "id": "db-shoulder-press", "name": "Dumbbell Shoulder Press", "category": "Free weight", "primaryMuscles": ["shoulders", "triceps"], "pattern": "push_v", "equipmentType": "dumbbell", "unilateral": false, "loadMode": "per_hand", "defaultIncrementKg": 2.5, "repRange": [8, 12], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" },
-    { "id": "bb-deadlift", "name": "Barbell Deadlift", "category": "Free weight", "primaryMuscles": ["glutes", "hamstrings", "back"], "pattern": "hinge", "equipmentType": "barbell", "unilateral": false, "loadMode": "total", "defaultIncrementKg": 2.5, "repRange": [5, 8], "backCaution": true, "kneeCaution": false, "gated": true, "note": "Gated: 4 weeks of pain-free RDLs and swings first. Start with the empty bar or trap bar." },
-
-    { "id": "core-back-extension", "name": "45° Back Extension", "category": "Core", "primaryMuscles": ["glutes", "lower back"], "pattern": "hinge", "equipmentType": "bodyweight", "unilateral": false, "loadMode": "bodyweight_plus", "defaultIncrementKg": 2.5, "repRange": [10, 15], "backCaution": true, "kneeCaution": false, "gated": false, "note": "Glute-driven, no hyperextension." },
-    { "id": "core-dead-bug", "name": "Dead Bug", "category": "Core", "primaryMuscles": ["core"], "pattern": "core", "equipmentType": "bodyweight", "unilateral": false, "loadMode": "bodyweight_plus", "defaultIncrementKg": 0, "repRange": [8, 12], "backCaution": false, "kneeCaution": false, "gated": false, "note": "Reps per side." },
-    { "id": "core-bird-dog", "name": "Bird-dog", "category": "Core", "primaryMuscles": ["core", "lower back"], "pattern": "core", "equipmentType": "bodyweight", "unilateral": true, "loadMode": "bodyweight_plus", "defaultIncrementKg": 0, "repRange": [8, 12], "backCaution": false, "kneeCaution": false, "gated": false, "note": "Reps per side." },
-    { "id": "core-plank", "name": "Plank", "category": "Core", "primaryMuscles": ["core"], "pattern": "core", "equipmentType": "bodyweight", "unilateral": false, "loadMode": "timed", "defaultIncrementKg": 0, "repRange": [30, 60], "backCaution": false, "kneeCaution": false, "gated": false, "note": "Reps = seconds." },
-    { "id": "core-hanging-knee-raise", "name": "Hanging Knee Raise", "category": "Core", "primaryMuscles": ["core", "hip flexors"], "pattern": "core", "equipmentType": "bodyweight", "unilateral": false, "loadMode": "bodyweight_plus", "defaultIncrementKg": 0, "repRange": [8, 15], "backCaution": false, "kneeCaution": false, "gated": false, "note": "" }
+    {
+      "id": "kb-swing",
+      "name": "Kettlebell Swing (two-hand)",
+      "category": "Kettlebell",
+      "primaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "pattern": "hinge",
+      "equipmentType": "kettlebell",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 4,
+      "repRange": [
+        10,
+        20
+      ],
+      "backCaution": true,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Hinge, not squat. Stop if lower back pumps.",
+      "cues": [
+        "!Hinge, not squat. Stop if the lower back pumps.",
+        "Hike the bell back high between the thighs.",
+        "Snap the hips forward; the arms are just ropes.",
+        "Bell floats to chest height, no higher.",
+        "Stand tall at the top, glutes locked."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "kb-goblet-squat",
+      "name": "Goblet Squat",
+      "category": "Kettlebell",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "pattern": "squat",
+      "equipmentType": "kettlebell",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 4,
+      "repRange": [
+        8,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": true,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Hold the bell at the chest, elbows tucked.",
+        "Sit between the heels, chest up.",
+        "Knees track over the toes.",
+        "!Only as deep as the knees allow pain-free."
+      ],
+      "visualId": "Pile squat with dumbbell",
+      "visualFrames": 2
+    },
+    {
+      "id": "kb-sa-press",
+      "name": "Kettlebell Single-arm Press",
+      "category": "Kettlebell",
+      "primaryMuscles": [
+        "shoulders",
+        "triceps"
+      ],
+      "pattern": "push_v",
+      "equipmentType": "kettlebell",
+      "unilateral": true,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 4,
+      "repRange": [
+        5,
+        10
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Clean the bell to the rack, wrist straight.",
+        "Brace the trunk, squeeze the free hand.",
+        "Press straight up until the bicep is by the ear.",
+        "Lower under control back to the rack."
+      ],
+      "visualId": "One arm shoulder press",
+      "visualFrames": 2
+    },
+    {
+      "id": "kb-sa-row",
+      "name": "Kettlebell Single-arm Row",
+      "category": "Kettlebell",
+      "primaryMuscles": [
+        "lats",
+        "upper back"
+      ],
+      "pattern": "pull_h",
+      "equipmentType": "kettlebell",
+      "unilateral": true,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 4,
+      "repRange": [
+        8,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Hinge and brace the free hand on a bench or knee.",
+        "Pull the bell to the hip, elbow close.",
+        "Pause, then lower slowly.",
+        "!Back stays flat the whole set."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "kb-carry",
+      "name": "Kettlebell Carry (suitcase or farmer)",
+      "category": "Kettlebell",
+      "primaryMuscles": [
+        "core",
+        "grip"
+      ],
+      "pattern": "carry",
+      "equipmentType": "kettlebell",
+      "unilateral": true,
+      "loadMode": "timed",
+      "defaultIncrementKg": 4,
+      "repRange": [
+        30,
+        60
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Reps = seconds.",
+      "cues": [
+        "Stand tall, shoulders back and down.",
+        "Grip hard, bell held off the leg.",
+        "Short quick steps, no leaning.",
+        "Reps are seconds walked."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "kb-clean",
+      "name": "Kettlebell Clean",
+      "category": "Kettlebell",
+      "primaryMuscles": [
+        "glutes",
+        "upper back"
+      ],
+      "pattern": "hinge",
+      "equipmentType": "kettlebell",
+      "unilateral": true,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 4,
+      "repRange": [
+        5,
+        10
+      ],
+      "backCaution": true,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "!Hinge to start, back flat.",
+        "Pull with the hips, elbow tight to the body.",
+        "Bell rolls around the wrist, no banging.",
+        "Catch in the rack with a straight wrist."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "kb-deadlift",
+      "name": "Kettlebell Deadlift",
+      "category": "Kettlebell",
+      "primaryMuscles": [
+        "glutes",
+        "hamstrings"
+      ],
+      "pattern": "hinge",
+      "equipmentType": "kettlebell",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 4,
+      "repRange": [
+        8,
+        15
+      ],
+      "backCaution": true,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Entry-level hinge. Build here before barbell.",
+      "cues": [
+        "!Entry-level hinge. Build here before the barbell.",
+        "Bell between the feet, shins near vertical.",
+        "Push the hips back, chest proud.",
+        "Stand by driving the floor away.",
+        "Lock out tall, no leaning back."
+      ],
+      "visualId": "Dumbbell dead lifts",
+      "visualFrames": 2
+    },
+    {
+      "id": "kb-halo",
+      "name": "Kettlebell Halo",
+      "category": "Kettlebell",
+      "primaryMuscles": [
+        "shoulders",
+        "core"
+      ],
+      "pattern": "iso",
+      "equipmentType": "kettlebell",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 4,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Warm-up movement.",
+      "cues": [
+        "Hold the bell by the horns, upside down.",
+        "Circle slowly around the head, elbows close.",
+        "Ribs down, trunk still.",
+        "Warm-up: alternate directions each rep."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "m-leg-press",
+      "name": "Leg Press",
+      "category": "Machine",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "pattern": "squat",
+      "equipmentType": "machine_plate",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        10,
+        15
+      ],
+      "backCaution": true,
+      "kneeCaution": true,
+      "gated": false,
+      "note": "Keep lower back on the pad. Don't chase depth.",
+      "cues": [
+        "!Keep the lower back on the pad. Don't chase depth.",
+        "Feet shoulder width, mid platform, toes slightly out.",
+        "Lower until the knees pass 90°, heels down.",
+        "Drive through mid-foot; don't lock the knees.",
+        "!If a knee complains, raise the feet and shorten the range."
+      ],
+      "visualId": "Leg press",
+      "visualFrames": 2
+    },
+    {
+      "id": "m-chest-press",
+      "name": "Chest Press",
+      "category": "Machine",
+      "primaryMuscles": [
+        "chest",
+        "triceps"
+      ],
+      "pattern": "push_h",
+      "equipmentType": "machine_selectorised",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Set the seat so the handles sit at mid-chest.",
+        "Shoulder blades back and down into the pad.",
+        "Press until the elbows are nearly straight.",
+        "Lower slowly, shoulders stay down."
+      ],
+      "visualId": "Machine bench press",
+      "visualFrames": 2
+    },
+    {
+      "id": "m-lat-pulldown",
+      "name": "Lat Pulldown",
+      "category": "Machine",
+      "primaryMuscles": [
+        "lats",
+        "biceps"
+      ],
+      "pattern": "pull_v",
+      "equipmentType": "machine_selectorised",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Thighs locked under the pad.",
+        "Pull the bar to the upper chest, elbows down.",
+        "Chest up, slight lean back, no swinging.",
+        "Control the bar all the way up."
+      ],
+      "visualId": "Underhand pull down",
+      "visualFrames": 2
+    },
+    {
+      "id": "m-seated-row",
+      "name": "Seated Row (machine)",
+      "category": "Machine",
+      "primaryMuscles": [
+        "upper back",
+        "lats"
+      ],
+      "pattern": "pull_h",
+      "equipmentType": "machine_selectorised",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Chest on the pad, feet planted.",
+        "Pull the handles to the ribs, elbows back.",
+        "Squeeze the shoulder blades, then release slowly.",
+        "Don't shrug toward the ears."
+      ],
+      "visualId": "Seated cable rows",
+      "visualFrames": 2
+    },
+    {
+      "id": "m-shoulder-press",
+      "name": "Shoulder Press (machine)",
+      "category": "Machine",
+      "primaryMuscles": [
+        "shoulders",
+        "triceps"
+      ],
+      "pattern": "push_v",
+      "equipmentType": "machine_selectorised",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Set the seat so the handles start at shoulder height.",
+        "Press up without arching the lower back.",
+        "Stop just short of locking the elbows.",
+        "Lower to ear height, not below."
+      ],
+      "visualId": "Seated shoulder press machine",
+      "visualFrames": 2
+    },
+    {
+      "id": "m-leg-curl",
+      "name": "Leg Curl",
+      "category": "Machine",
+      "primaryMuscles": [
+        "hamstrings"
+      ],
+      "pattern": "hinge",
+      "equipmentType": "machine_selectorised",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 5,
+      "repRange": [
+        10,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Pad just above the heels.",
+        "Curl all the way in, pause one second.",
+        "Lower slowly on a three count.",
+        "Hips stay down on the seat."
+      ],
+      "visualId": "Seated leg curl",
+      "visualFrames": 2
+    },
+    {
+      "id": "m-leg-extension",
+      "name": "Leg Extension",
+      "category": "Machine",
+      "primaryMuscles": [
+        "quads"
+      ],
+      "pattern": "squat",
+      "equipmentType": "machine_selectorised",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 5,
+      "repRange": [
+        12,
+        20
+      ],
+      "backCaution": false,
+      "kneeCaution": true,
+      "gated": false,
+      "note": "Light, high reps. Stop at knee pain, not discomfort.",
+      "cues": [
+        "!Light weight, high reps. Stop at pain, not discomfort.",
+        "Pad on the shins just above the ankles.",
+        "Extend fully, squeeze the quads one second.",
+        "Lower under control; don't let the stack slam."
+      ],
+      "visualId": "Leg extensions",
+      "visualFrames": 2
+    },
+    {
+      "id": "m-pec-fly-rear-delt",
+      "name": "Pec Fly / Rear Delt",
+      "category": "Machine",
+      "primaryMuscles": [
+        "chest",
+        "rear delts"
+      ],
+      "pattern": "push_h",
+      "equipmentType": "machine_selectorised",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 5,
+      "repRange": [
+        12,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Log fly and rear delt as separate custom machines if you do both.",
+      "cues": [
+        "Set the seat so the handles are at shoulder height.",
+        "Slight elbow bend, held through the set.",
+        "Fly: bring the arms together, squeeze the chest.",
+        "Rear delt: open wide, squeeze the shoulder blades.",
+        "Log fly and rear delt as separate machines."
+      ],
+      "visualId": "Butterfly machine",
+      "visualFrames": 2
+    },
+    {
+      "id": "m-hip-abd-add",
+      "name": "Hip Abductor / Adductor",
+      "category": "Machine",
+      "primaryMuscles": [
+        "glutes",
+        "adductors"
+      ],
+      "pattern": "iso",
+      "equipmentType": "machine_selectorised",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 5,
+      "repRange": [
+        12,
+        20
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Sit tall with the back against the pad.",
+        "Move slowly in both directions.",
+        "Pause at the end of the range.",
+        "Abduction pushes out, adduction squeezes in."
+      ],
+      "visualId": "Thigh abductor",
+      "visualFrames": 1
+    },
+    {
+      "id": "c-cable-row",
+      "name": "Cable Row",
+      "category": "Cable",
+      "primaryMuscles": [
+        "upper back",
+        "lats"
+      ],
+      "pattern": "pull_h",
+      "equipmentType": "cable",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Sit tall, knees softly bent.",
+        "Pull the handle to the belly, elbows back.",
+        "Squeeze the blades; don't lean past upright.",
+        "Let the arms extend fully with a flat back."
+      ],
+      "visualId": "Seated cable rows",
+      "visualFrames": 2
+    },
+    {
+      "id": "c-face-pull",
+      "name": "Face Pull",
+      "category": "Cable",
+      "primaryMuscles": [
+        "rear delts",
+        "upper back"
+      ],
+      "pattern": "pull_h",
+      "equipmentType": "cable",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        12,
+        20
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Rope at face height, palms facing in.",
+        "Pull to the forehead, elbows high and wide.",
+        "Finish with the thumbs pointing back.",
+        "Light weight, slow reps."
+      ],
+      "visualId": "Seated rear lateral cable raise",
+      "visualFrames": 2
+    },
+    {
+      "id": "c-tricep-pushdown",
+      "name": "Tricep Pushdown",
+      "category": "Cable",
+      "primaryMuscles": [
+        "triceps"
+      ],
+      "pattern": "iso",
+      "equipmentType": "cable",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        10,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Elbows pinned to the sides.",
+        "Push down until the arms are straight.",
+        "Squeeze the triceps, then return slowly.",
+        "Don't lean onto the bar."
+      ],
+      "visualId": "Triceps pushdown with rope and cable",
+      "visualFrames": 2
+    },
+    {
+      "id": "c-pallof-press",
+      "name": "Pallof Press",
+      "category": "Cable",
+      "primaryMuscles": [
+        "core"
+      ],
+      "pattern": "core",
+      "equipmentType": "cable",
+      "unilateral": true,
+      "loadMode": "total",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        10,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Stand side-on to the cable, feet shoulder width.",
+        "Press the handle straight out and hold.",
+        "Resist the twist; hips and shoulders stay square.",
+        "Bring it back slowly. Reps per side."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "db-rdl",
+      "name": "Dumbbell Romanian Deadlift",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "hamstrings",
+        "glutes"
+      ],
+      "pattern": "hinge",
+      "equipmentType": "dumbbell",
+      "unilateral": false,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": true,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Hinge technique first. This is the gate for barbell deadlift.",
+      "cues": [
+        "!Hinge technique first. This is the gate for barbell deadlift.",
+        "Soft knees, push the hips straight back.",
+        "Bells slide down the thighs, back flat.",
+        "Stop when the hamstrings pull, usually mid-shin.",
+        "Drive the hips forward to stand."
+      ],
+      "visualId": "Romanian dead lift",
+      "visualFrames": 2
+    },
+    {
+      "id": "db-bench",
+      "name": "Dumbbell Bench Press",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "chest",
+        "triceps"
+      ],
+      "pattern": "push_h",
+      "equipmentType": "dumbbell",
+      "unilateral": false,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Shoulder blades back and down, feet flat.",
+        "Lower to chest level, elbows about 45°.",
+        "Press up and slightly in; don't clank the bells.",
+        "!Back stays on the bench. No arching to finish a rep."
+      ],
+      "visualId": "Bench press dumbbell",
+      "visualFrames": 2
+    },
+    {
+      "id": "db-split-squat",
+      "name": "Dumbbell Split Squat",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "quads",
+        "glutes"
+      ],
+      "pattern": "squat",
+      "equipmentType": "dumbbell",
+      "unilateral": true,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": true,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Long stance, front foot flat.",
+        "Drop straight down, back knee toward the floor.",
+        "Front knee tracks over the toes.",
+        "!Shorten the range if the knee complains. Reps per side."
+      ],
+      "visualId": "Lunges",
+      "visualFrames": 2
+    },
+    {
+      "id": "db-shoulder-press",
+      "name": "Dumbbell Shoulder Press",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "shoulders",
+        "triceps"
+      ],
+      "pattern": "push_v",
+      "equipmentType": "dumbbell",
+      "unilateral": false,
+      "loadMode": "per_hand",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Sit tall, ribs down, core braced.",
+        "Start with the bells at ear height.",
+        "Press up and slightly together.",
+        "Lower under control, no bouncing."
+      ],
+      "visualId": "Dumbbell shoulder press",
+      "visualFrames": 2
+    },
+    {
+      "id": "bb-deadlift",
+      "name": "Barbell Deadlift",
+      "category": "Free weight",
+      "primaryMuscles": [
+        "glutes",
+        "hamstrings",
+        "back"
+      ],
+      "pattern": "hinge",
+      "equipmentType": "barbell",
+      "unilateral": false,
+      "loadMode": "total",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        5,
+        8
+      ],
+      "backCaution": true,
+      "kneeCaution": false,
+      "gated": true,
+      "note": "Gated: 4 weeks of pain-free RDLs and swings first. Start with the empty bar or trap bar.",
+      "cues": [
+        "!Gated: 4 weeks of pain-free RDLs and swings first.",
+        "Start with the empty bar or the trap bar.",
+        "Bar over mid-foot, shins touching it.",
+        "Flat back, push the floor away.",
+        "Lock out tall, then lower with a hinge."
+      ],
+      "visualId": "Barbell dead lifts",
+      "visualFrames": 2
+    },
+    {
+      "id": "core-back-extension",
+      "name": "45° Back Extension",
+      "category": "Core",
+      "primaryMuscles": [
+        "glutes",
+        "lower back"
+      ],
+      "pattern": "hinge",
+      "equipmentType": "bodyweight",
+      "unilateral": false,
+      "loadMode": "bodyweight_plus",
+      "defaultIncrementKg": 2.5,
+      "repRange": [
+        10,
+        15
+      ],
+      "backCaution": true,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Glute-driven, no hyperextension.",
+      "cues": [
+        "!Glute-driven, no hyperextension.",
+        "Pad just below the hip bones.",
+        "Hinge down with a flat back.",
+        "Squeeze the glutes to come up to straight.",
+        "Stop in line with the body, never beyond."
+      ],
+      "visualId": "Hyperextensions",
+      "visualFrames": 2
+    },
+    {
+      "id": "core-dead-bug",
+      "name": "Dead Bug",
+      "category": "Core",
+      "primaryMuscles": [
+        "core"
+      ],
+      "pattern": "core",
+      "equipmentType": "bodyweight",
+      "unilateral": false,
+      "loadMode": "bodyweight_plus",
+      "defaultIncrementKg": 0,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Reps per side.",
+      "cues": [
+        "Lower back pressed into the floor.",
+        "Lower the opposite arm and leg slowly.",
+        "Stop before the back arches.",
+        "Exhale on the way out. Reps per side."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "core-bird-dog",
+      "name": "Bird-dog",
+      "category": "Core",
+      "primaryMuscles": [
+        "core",
+        "lower back"
+      ],
+      "pattern": "core",
+      "equipmentType": "bodyweight",
+      "unilateral": true,
+      "loadMode": "bodyweight_plus",
+      "defaultIncrementKg": 0,
+      "repRange": [
+        8,
+        12
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Reps per side.",
+      "cues": [
+        "Hands under shoulders, knees under hips.",
+        "Reach the opposite arm and leg out long.",
+        "Hips stay level, nothing twists.",
+        "Pause, return slowly. Reps per side."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "core-plank",
+      "name": "Plank",
+      "category": "Core",
+      "primaryMuscles": [
+        "core"
+      ],
+      "pattern": "core",
+      "equipmentType": "bodyweight",
+      "unilateral": false,
+      "loadMode": "timed",
+      "defaultIncrementKg": 0,
+      "repRange": [
+        30,
+        60
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "Reps = seconds.",
+      "cues": [
+        "Elbows under the shoulders.",
+        "Squeeze the glutes, tuck the tailbone slightly.",
+        "Head in line with the spine.",
+        "Breathe. Reps are seconds held."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    },
+    {
+      "id": "core-hanging-knee-raise",
+      "name": "Hanging Knee Raise",
+      "category": "Core",
+      "primaryMuscles": [
+        "core",
+        "hip flexors"
+      ],
+      "pattern": "core",
+      "equipmentType": "bodyweight",
+      "unilateral": false,
+      "loadMode": "bodyweight_plus",
+      "defaultIncrementKg": 0,
+      "repRange": [
+        8,
+        15
+      ],
+      "backCaution": false,
+      "kneeCaution": false,
+      "gated": false,
+      "note": "",
+      "cues": [
+        "Hang with the shoulders pulled down.",
+        "Tuck the pelvis before the knees lift.",
+        "Knees to hip height or above.",
+        "Lower slowly, no swinging."
+      ],
+      "visualId": null,
+      "visualFrames": 0
+    }
   ],
   "cardioModalities": [
-    { "id": "treadmill_z2", "name": "Treadmill Zone 2 incline walk", "defaults": { "durationMin": 45, "inclinePct": 12, "speedKph": 5.0 } },
-    { "id": "treadmill_4x4", "name": "Treadmill 4x4 intervals", "defaults": { "durationMin": 38, "intervals": 4, "workMin": 4, "restMin": 3 } },
-    { "id": "bike", "name": "Bike", "defaults": { "durationMin": 30 } }
+    {
+      "id": "treadmill_z2",
+      "name": "Treadmill Zone 2 incline walk",
+      "defaults": {
+        "durationMin": 45,
+        "inclinePct": 12,
+        "speedKph": 5.0
+      }
+    },
+    {
+      "id": "treadmill_4x4",
+      "name": "Treadmill 4x4 intervals",
+      "defaults": {
+        "durationMin": 38,
+        "intervals": 4,
+        "workMin": 4,
+        "restMin": 3
+      }
+    },
+    {
+      "id": "bike",
+      "name": "Bike",
+      "defaults": {
+        "durationMin": 30
+      }
+    }
   ],
   "methods": {
-    "phase1": ["straight_sets", "warmup_toggle"],
-    "phase2": ["rir_chips", "supersets", "timed_circuits"]
+    "phase1": [
+      "straight_sets",
+      "warmup_toggle"
+    ],
+    "phase2": [
+      "rir_chips",
+      "supersets",
+      "timed_circuits"
+    ]
   }
 }

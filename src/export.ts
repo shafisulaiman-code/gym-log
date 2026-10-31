@@ -82,15 +82,19 @@ export async function buildExport() {
   }
 }
 
-export async function exportJson() {
+export async function buildExportFile(): Promise<File> {
   const data = await buildExport()
   const name = `gymlog-${sgDate()}.json`
   const json = JSON.stringify(data, null, 2)
-  const file = new File([json], name, { type: 'application/json' })
+  return new File([json], name, { type: 'application/json' })
+}
 
+// Share sheet when the browser offers one for files, otherwise a plain download.
+// Over plain http Chrome blocks both; the export sheet then falls back to copy or text.
+export async function shareOrDownload(file: File): Promise<void> {
   if (navigator.canShare?.({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: name })
+      await navigator.share({ files: [file], title: file.name })
       return
     } catch (e) {
       if ((e as Error).name === 'AbortError') return // user closed the share sheet
@@ -100,7 +104,18 @@ export async function exportJson() {
   const url = URL.createObjectURL(file)
   const a = document.createElement('a')
   a.href = url
-  a.download = name
+  a.download = file.name
   a.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+// True on success. False when the clipboard API is missing (plain http) or refuses.
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    if (!navigator.clipboard?.writeText) return false
+    await navigator.clipboard.writeText(text)
+    return true
+  } catch {
+    return false
+  }
 }

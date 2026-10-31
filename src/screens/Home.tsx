@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { db, findActiveWorkout } from '../db'
-import { exportJson } from '../export'
+import ExportSheet from './ExportSheet'
 import type { Outlet, Workout } from '../types'
 import { getLastOutlet, minutesBetween, setLastOutlet, sgIso, shortOutlet, uuid } from '../util'
 
@@ -10,12 +10,21 @@ type Props = {
   onBodyweight: () => void
 }
 
-type PastRow = { workout: Workout; label: string; detail: string }
+type PastRow = { workout: Workout; title: string; sub: string; dur: string }
 
 const CARDIO_LABELS: Record<string, string> = {
   treadmill_z2: 'Zone 2',
   treadmill_4x4: '4x4',
   bike: 'Bike',
+}
+
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+// "Sat 31 Oct" from an ISO date or timestamp.
+export function shortDate(iso: string): string {
+  const d = new Date(iso.length === 10 ? `${iso}T12:00:00` : iso)
+  return `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`
 }
 
 export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
@@ -43,21 +52,23 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
       .filter((w) => w.endedAt)
       .slice(0, 30)
       .map((w) => {
-        const date = w.startedAt.slice(0, 10)
+        const date = shortDate(w.startedAt)
         const mins = minutesBetween(w.startedAt, w.endedAt!)
         if (w.type === 'cardio') {
           const c = cardio.find((x) => x.workoutId === w.id)
           return {
             workout: w,
-            label: `${date} · Cardio`,
-            detail: `${CARDIO_LABELS[c?.modality ?? ''] ?? ''} · ${c?.durationMin ?? mins} min`,
+            title: `${date} · Cardio`,
+            sub: CARDIO_LABELS[c?.modality ?? ''] ?? '',
+            dur: `${c?.durationMin ?? mins} min`,
           }
         }
         const exCount = new Set(sets.filter((s) => s.workoutId === w.id).map((s) => s.exerciseId)).size
         return {
           workout: w,
-          label: `${date} · ${name(w.outletId)}`,
-          detail: `${exCount} exercise${exCount === 1 ? '' : 's'} · ${mins} min`,
+          title: `${date} · ${name(w.outletId)}`,
+          sub: `${exCount} exercise${exCount === 1 ? '' : 's'}`,
+          dur: `${mins} min`,
         }
       })
 
@@ -85,35 +96,33 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
     onOpenWorkout(id)
   }
 
-  async function doExport() {
-    setExporting(true)
-    try {
-      await exportJson()
-    } finally {
-      setExporting(false)
-    }
-  }
 
   return (
     <div className="screen">
-      <h1>Gym Log</h1>
+      <div className="lbl home-date">{shortDate(sgIso())}</div>
 
-      <label className="field">
-        <span>Outlet</span>
-        <select value={outletId} onChange={(e) => chooseOutlet(e.target.value)} disabled={!!active}>
-          {outlets.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="lbl">Outlet</div>
+      <div className="outlet-grid" role="radiogroup" aria-label="Outlet">
+        {outlets.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            role="radio"
+            aria-checked={o.id === outletId}
+            className={`chip ${o.id === outletId ? 'selected' : ''}`}
+            disabled={!!active && o.id !== outletId}
+            onClick={() => chooseOutlet(o.id)}
+          >
+            {shortOutlet(o.name)}
+          </button>
+        ))}
+      </div>
 
-      <button type="button" className="btn primary huge" onClick={start}>
+      <button type="button" className="btn primary huge" onClick={start} style={{ marginTop: 16 }}>
         {active ? 'Resume workout' : 'Start workout'}
       </button>
 
-      <div className="card-actions">
+      <div className="two-up">
         <button type="button" className="btn secondary" onClick={onCardio}>
           Cardio
         </button>
@@ -126,19 +135,27 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
       {past.length === 0 ? (
         <p className="muted">Nothing logged yet.</p>
       ) : (
-        <ul className="history">
-          {past.map((p) => (
-            <li key={p.workout.id}>
-              <span>{p.label}</span>
-              <span className="muted">{p.detail}</span>
-            </li>
-          ))}
-        </ul>
+        past.map((p) => (
+          <div className="card past" key={p.workout.id}>
+            <div>
+              <div className="title">{p.title}</div>
+              <div className="sub">{p.sub}</div>
+            </div>
+            <div className="dur">{p.dur}</div>
+          </div>
+        ))
       )}
 
-      <button type="button" className="btn secondary wide" onClick={doExport} disabled={exporting}>
-        {exporting ? 'Exporting…' : 'Export JSON'}
+      <button
+        type="button"
+        className="btn secondary wide"
+        onClick={() => setExporting(true)}
+        style={{ marginTop: 24 }}
+      >
+        Export JSON
       </button>
+
+      <ExportSheet open={exporting} onClose={() => setExporting(false)} />
     </div>
   )
 }

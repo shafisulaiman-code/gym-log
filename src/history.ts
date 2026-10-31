@@ -61,6 +61,7 @@ export function prefillRows(
       weightKg: s.weightKg,
       reps: s.reps,
       durationSec: s.durationSec,
+      ghost: true,
     }))
   }
   const row: SetRow = { ...base, id: uuid(), seq: nextSeq(), setIndex: 0, isWarmup: false }
@@ -100,4 +101,16 @@ export function formatLast(ex: Exercise, last: SetRow[]): string {
     return l ? `Last: ${l} × ${counts}` : `Last: ${counts}`
   }
   return 'Last: ' + working.map((s) => `${fmt(s.weightKg ?? 0)}×${count(s)}`).join(', ')
+}
+
+// Header pill and progress strip: every row counts (ghost included), done = ticked.
+export function countSets(rows: SetRow[]): { done: number; total: number } {
+  return { done: rows.filter((r) => r.completedAt).length, total: rows.length }
+}
+
+// Every distinct weight ever ticked on this exercise, for the kettlebell chip row.
+export async function distinctWeights(exerciseId: string): Promise<number[]> {
+  const rows = await db.sets.where('exerciseId').equals(exerciseId).toArray()
+  const used = rows.filter((r) => r.completedAt && r.weightKg !== undefined).map((r) => r.weightKg!)
+  return [...new Set(used)]
 }
