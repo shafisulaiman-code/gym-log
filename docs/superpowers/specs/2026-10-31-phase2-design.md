@@ -142,8 +142,8 @@ A pure function `weeklySummary(input, weekStart): string` in `src/weekly.ts`, wi
 **Header**
 
 ```
-# Gym Log · week 44 · Mon 27 Oct to Sun 2 Nov 2026
-Generated Sun 2 Nov 2026 21:10 (+08:00). Weights in kg. "ph" = per hand. Effort is RPE out of 10.
+# Gym Log · week 44 · Mon 26 Oct to Sun 1 Nov 2026
+Generated Sun 1 Nov 2026 21:10 (+08:00). Weights in kg. "ph" = per hand. Effort is RPE out of 10.
 ```
 
 **Sessions**: a table with Date, Outlet, Type, Duration, Sets, Volume. Strength rows: duration from `startedAt` to `endedAt`, sets = completed rows (warm-ups included), volume from `volumeKg` in `summary.ts`, formatted with a thousands separator and " kg". Cardio rows: Type "Cardio", Sets column shows the modality short name ("4x4", "Zone 2", "Bike"), Volume column shows "avg 148 · max 171" from whatever heart rates exist, blank if none. Unfinished strength workouts (no `endedAt`) are excluded. Outlet uses `shortOutlet`.
@@ -151,7 +151,7 @@ Generated Sun 2 Nov 2026 21:10 (+08:00). Weights in kg. "ph" = per hand. Effort 
 **Strength, by exercise**: one `###` heading per exercise with at least one completed working set this week, in order of first appearance in the week. For exercises keyed by equipment, the heading carries the machine in muted parentheses: `### Leg Press (Tampines West machine)`; one heading per equipment row, so the same machine at two outlets becomes two headings. Under each heading, one bullet per session: this week's sessions first, newest first, in bold; then the three most recent sessions before the week start for the same key (equipment id, or exercise id for free weights, kettlebells and bodyweight), not bold. Bullet format:
 
 ```
-- Fri 31 Oct · 100 × 12, 12, 10 · RPE 8 · back
+- Sat 31 Oct · 100 × 12, 12, 10 · RPE 8 · back
 ```
 
 Load formatting for the summary (a helper next to `formatLast`, shared if practical): total load "100"; per hand "14 ph"; bodyweight-plus "BW" or "BW+10"; box height "60 cm"; timed sets show seconds in place of reps, "45s"; warm-ups are left out; if weights differ within a session, "100×12, 105×10" as `formatLast` does. "RPE n" and the pain word appear only when present on the session's latest rated row. Kilogram units are stated once in the header, not per line (my call, to keep lines short for the Project).
@@ -161,14 +161,14 @@ Load formatting for the summary (a helper next to `formatLast`, shared if practi
 **Cardio**: one bullet per session this week, oldest first:
 
 ```
-- Wed 29 Oct · Treadmill 4x4 · 38 min · 6.2 km/h at 10% · peaks 165, 168, 170, 171 · avg 148 · max 171 · RPE 8
+- Thu 29 Oct · Treadmill 4x4 · 38 min · 6.2 km/h at 10% · peaks 165, 168, 170, 171 · avg 148 · max 171 · RPE 8
 ```
 
 Modality names from the seed's `cardioModalities`. Segments are omitted when their value is missing. 4x4 shows each interval's peak HR in order; speed and incline show the shared values, with an interval override noted inline as "(int 3: 6.5 km/h)".
 
-**Bodyweight**: one bullet per entry this week, oldest first: `- Mon 27 Oct · 109.4 kg · waist 108 cm`. Then, if an entry exists within three days of 28 days before this week's latest entry: `- Four weeks ago (Mon 29 Sep): 110.6 kg. Change: −1.2 kg`. Otherwise no comparison line.
+**Bodyweight**: one bullet per entry this week, oldest first: `- Tue 27 Oct · 109.4 kg · waist 108 cm`. Then, if an entry exists within three days of 28 days before this week's latest entry: `- Four weeks ago (Tue 29 Sep): 110.6 kg. Change: −1.2 kg`. Otherwise no comparison line.
 
-**Notes**: one bullet per strength or cardio session this week that has a note: `- Fri 31 Oct: "Swing felt it in the lower back on set 3"`.
+**Notes**: one bullet per strength or cardio session this week that has a note: `- Sat 31 Oct: "Swing felt it in the lower back on set 3"`.
 
 Nothing else: no verdicts, no plateau labels, no suggested weights, no e1RM.
 
