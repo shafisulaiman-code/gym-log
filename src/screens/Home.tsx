@@ -4,6 +4,12 @@ import ExportSheet from './ExportSheet'
 import WeeklySheet from './WeeklySheet'
 import AddOutletSheet from './AddOutletSheet'
 import SessionSheet from './SessionSheet'
+import CoachCard from './CoachCard'
+import LightWeekSheet from './LightWeekSheet'
+import HistorySheet from './HistorySheet'
+import { coachRows, type CoachRow } from '../coach'
+import { endLightWeek, snoozeLightWeek, startLightWeek } from '../coachStore'
+import { loadAll, type GymData } from '../export'
 import { CARDIO_LABELS } from '../sessionDetail'
 import { locate } from '../locate'
 import type { Outlet, Workout } from '../types'
@@ -38,6 +44,12 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
   const [nearId, setNearId] = useState<string | null>(null)
   const [addingGym, setAddingGym] = useState(false)
   const [viewing, setViewing] = useState<Workout | null>(null)
+  // The coach card reads everything, so it loads after the first paint.
+  const [data, setData] = useState<GymData | null>(null)
+  const [coach, setCoach] = useState<CoachRow[]>([])
+  const [lightMode, setLightMode] = useState<'due' | 'running' | null>(null)
+  const [lightLeft, setLightLeft] = useState(0)
+  const [lift, setLift] = useState<{ exerciseId: string; key: string } | null>(null)
   // Once Shafi taps an outlet himself, the suggestion never overrides it.
   const touched = useRef(false)
 
@@ -115,6 +127,21 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
     setOutletId(os.some((o) => o.id === remembered) ? remembered! : fallback)
     setActive(act)
     setPast(rows)
+    loadCoach()
+  }
+
+  async function loadCoach() {
+    const all = await loadAll()
+    setData(all)
+    setCoach(coachRows(all, sgIso()))
+  }
+
+  function openRow(row: CoachRow) {
+    if (row.kind === 'light-due') setLightMode('due')
+    else if (row.kind === 'light-running') {
+      setLightLeft(row.daysLeft)
+      setLightMode('running')
+    } else setLift({ exerciseId: row.exerciseId, key: row.key })
   }
 
   // A gym Shafi just named: it becomes the selected, nearby outlet at once.
@@ -193,6 +220,8 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
         </button>
       </div>
 
+      <CoachCard rows={coach} onRow={openRow} />
+
       <h3>Past workouts</h3>
       {past.length === 0 ? (
         <p className="muted">Nothing logged yet.</p>
@@ -227,6 +256,21 @@ export default function Home({ onOpenWorkout, onCardio, onBodyweight }: Props) {
           setViewing(null)
           load()
         }}
+      />
+      <HistorySheet
+        data={data}
+        ex={data?.exercises.find((e) => e.id === lift?.exerciseId) ?? null}
+        keyId={lift?.key ?? null}
+        onClose={() => setLift(null)}
+      />
+      <LightWeekSheet
+        mode={lightMode}
+        daysLeft={lightLeft}
+        onStart={() => startLightWeek(sgIso()).then(loadCoach)}
+        onNotNow={() => snoozeLightWeek(sgIso()).then(loadCoach)}
+        onEnd={() => endLightWeek(sgIso()).then(loadCoach)}
+        onKeep={() => {}}
+        onClose={() => setLightMode(null)}
       />
       <AddOutletSheet
         open={addingGym}

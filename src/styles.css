@@ -1880,3 +1880,116 @@ button.card.folded {
   color: var(--faint);
   margin-top: 10px;
 }
+
+/* Coach card on Home */
+.coach {
+  padding: 12px 14px;
+}
+
+.coach-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.coach-kicker {
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.coach-head small {
+  color: var(--faint);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.coach-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--tap);
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.coach-row:first-of-type {
+  border-top: 0;
+}
+
+.coach-ic {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  font-style: normal;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.coach-ic.pr {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.coach-ic.stall {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.coach-ic.light {
+  background: var(--raised);
+  color: var(--muted);
+}
+
+.coach-text {
+  min-width: 0;
+}
+
+.coach-row b {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.coach-row span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.coach-chev {
+  margin-left: auto;
+  flex: none;
+  color: var(--faint);
+  font-size: 18px;
+  font-style: normal;
+}
+
+.coach-row:active {
+  background: var(--raised);
+}
+
+.coach-more {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.light-body {
+  margin: 0 0 16px;
+  font-size: 15px;
+  line-height: 1.45;
+}
