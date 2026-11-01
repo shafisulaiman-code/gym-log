@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { countSets, prefillRows, formatLast, formatSession, loadUnit, knownRows, ratingOf, pickLastSession } from './history'
+import { countSets, prefillRows, formatLast, formatSession, loadUnit, knownRows, ratingOf, pickLastSession, undoPlan } from './history'
 import type { Equipment, Exercise, LightWeek, SetRow } from './types'
 
 export const legPress: Exercise = {
@@ -223,5 +223,53 @@ describe('pickLastSession', () => {
       row('b', '2026-10-28T10:00:00+08:00', 90),
     ]
     expect(pickLastSession(rows, lw).map((r) => r.weightKg)).toEqual([95, 100])
+  })
+})
+
+describe('undoPlan', () => {
+  const row = (id: string, seq: number, over: Partial<SetRow>): SetRow => ({
+    id, workoutId: 'w1', exerciseId: 'm-leg-press', equipmentId: 'eq1', setIndex: 0, isWarmup: false, weightKg: 100, reps: 12, seq, ...over,
+  })
+  const prefill = [
+    row('pw', 90, { isWarmup: true, ghost: true, weightKg: 60 }),
+    row('p1', 91, { ghost: true }),
+    row('p2', 92, { ghost: true }),
+    row('p3', 93, { ghost: true }),
+  ]
+
+  it('swaps the ghost working rows back and keeps the warm-up ghost', () => {
+    const mine = [
+      row('w', 1, { isWarmup: true, ghost: true, weightKg: 60 }),
+      row('a', 2, { ghost: true, coach: 'up', weightKg: 102.5, reps: 10 }),
+      row('b', 3, { ghost: true, coach: 'up', weightKg: 102.5, reps: 10 }),
+      row('c', 4, { ghost: true, coach: 'up', weightKg: 102.5, reps: 10 }),
+    ]
+    const { remove, add } = undoPlan(mine, prefill)
+    expect(remove.map((r) => r.id)).toEqual(['a', 'b', 'c'])
+    expect(add.map((r) => [r.isWarmup, r.seq, r.weightKg, r.coach])).toEqual([
+      [false, 2, 100, undefined],
+      [false, 3, 100, undefined],
+      [false, 4, 100, undefined],
+    ])
+  })
+
+  it('counts a hand-edited working row and never touches warm-ups', () => {
+    const mine = [
+      row('w', 1, { isWarmup: true, ghost: true, weightKg: 60 }),
+      row('a', 2, { coach: 'up', weightKg: 105, reps: 9 }), // edited by hand: real
+      row('b', 3, { ghost: true, coach: 'up' }),
+      row('c', 4, { ghost: true, coach: 'up' }),
+    ]
+    const { remove, add } = undoPlan(mine, prefill)
+    expect(remove.map((r) => r.id)).toEqual(['b', 'c'])
+    expect(add).toHaveLength(2)
+    expect(add.every((r) => !r.isWarmup && r.ghost === true)).toBe(true)
+    expect(add.map((r) => r.seq)).toEqual([3, 4])
+  })
+
+  it('numbers extra restored rows after the last row', () => {
+    const mine = [row('a', 5, { ghost: true, coach: 'light' }), row('b', 6, { ghost: true, coach: 'light' })]
+    const { add } = undoPlan(mine, prefill)
+    expect(add.map((r) => r.seq)).toEqual([5, 6, 7])
   })
 })

@@ -13,6 +13,7 @@ import {
   lastSession,
   loadUnit,
   prefillRows,
+  undoPlan,
   weightStep,
 } from '../history'
 import type { CoachTag, Equipment, Exercise, Outlet, SetRow, Workout as WorkoutT } from '../types'
@@ -51,6 +52,7 @@ export default function Workout({ workoutId, onDone }: Props) {
   // Cards whose every set is ticked fold to one line; a tap pins one open.
   const [pinnedOpen, setPinnedOpen] = useState<string[]>([])
   const coach = data?.coach ?? EMPTY_COACH
+  const undoing = useRef(false) // a second tap on the taken line while the first undo is still running
 
   // Today's nudge per exercise. History does not change mid-workout, so this only
   // recomputes when the exercises, their equipment or the bell sizes change.
@@ -228,24 +230,24 @@ export default function Workout({ workoutId, onDone }: Props) {
     if (dropped.size > 0) db.sets.bulkDelete([...dropped])
   }
 
-  // Back to last time's rows. The fresh rows reuse the old seq values so the card and its
-  // sets keep their place; rows the user already made real stay and count towards the plan.
+  // Back to last time's working rows; warm-ups and rows the user made real stay (see undoPlan).
   async function undoSuggestion(exerciseId: string) {
+    if (undoing.current) return
     const ex = exercises[exerciseId]
     const mine = sets.filter((r) => r.exerciseId === exerciseId)
     if (!ex || mine.length === 0) return
-    const ghosts = mine.filter((r) => r.ghost)
-    const eq = mine[0].equipmentId ? equipment[mine[0].equipmentId] : undefined
-    const last = await lastSession(ex, eq?.id, workoutId, coach.lightWeeks)
-    const real = mine.length - ghosts.length
-    let tail = Math.max(...mine.map((r) => r.seq))
-    const fresh = prefillRows(ex, eq, workoutId, last)
-      .slice(real)
-      .map((r, i) => ({ ...r, seq: ghosts[i]?.seq ?? ++tail }))
-    const gone = new Set(ghosts.map((r) => r.id))
-    setSets((prev) => [...prev.filter((r) => !gone.has(r.id)), ...fresh].sort((a, b) => a.seq - b.seq))
-    await db.sets.bulkDelete([...gone])
-    await db.sets.bulkAdd(fresh)
+    undoing.current = true
+    try {
+      const eq = mine[0].equipmentId ? equipment[mine[0].equipmentId] : undefined
+      const last = await lastSession(ex, eq?.id, workoutId, coach.lightWeeks)
+      const { remove, add } = undoPlan(mine, prefillRows(ex, eq, workoutId, last))
+      const gone = new Set(remove.map((r) => r.id))
+      setSets((prev) => [...prev.filter((r) => !gone.has(r.id)), ...add].sort((a, b) => a.seq - b.seq))
+      await db.sets.bulkDelete([...gone])
+      await db.sets.bulkAdd(add)
+    } finally {
+      undoing.current = false
+    }
   }
 
   function setStep(eq: Equipment, stackStepKg: number) {

@@ -108,6 +108,21 @@ export function prefillRows(
   return [row]
 }
 
+// Undoing a nudge: warm-up rows are left alone; the ghost working rows go and last
+// time's working rows come back, minus the working rows the user already made real.
+// The fresh rows take the removed ghosts' seq values (then fresh ones after the last
+// row) so the card and its sets keep their place. `mine` is every row of the exercise.
+export function undoPlan(mine: SetRow[], prefill: SetRow[]): { remove: SetRow[]; add: SetRow[] } {
+  const remove = mine.filter((r) => r.ghost && !r.isWarmup)
+  const realWorking = mine.filter((r) => !r.ghost && !r.isWarmup).length
+  let tail = Math.max(0, ...mine.map((r) => r.seq))
+  const add = prefill
+    .filter((r) => !r.isWarmup)
+    .slice(realWorking)
+    .map((r, i) => ({ ...r, seq: remove[i]?.seq ?? ++tail }))
+  return { remove, add }
+}
+
 // Set rows whose exercise has left the library (pruned seed row) are skipped.
 export function knownRows(rows: SetRow[], exercises: Record<string, Exercise>): SetRow[] {
   return rows.filter((r) => exercises[r.exerciseId])
