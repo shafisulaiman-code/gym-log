@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { countSets, prefillRows, formatLast, formatSession, loadUnit, knownRows, ratingOf } from './history'
-import type { Equipment, Exercise, SetRow } from './types'
+import { countSets, prefillRows, formatLast, formatSession, loadUnit, knownRows, ratingOf, pickLastSession } from './history'
+import type { Equipment, Exercise, LightWeek, SetRow } from './types'
 
 export const legPress: Exercise = {
   id: 'm-leg-press',
@@ -189,5 +189,39 @@ describe('formatSession', () => {
   })
   it('is empty with no working sets', () => {
     expect(formatSession(legPress, [last[0]])).toBe('')
+  })
+})
+
+describe('pickLastSession', () => {
+  const lw: LightWeek[] = [{ startedAt: '2026-10-26T00:00:00+08:00', endsAt: '2026-11-02T00:00:00+08:00' }]
+  const row = (workoutId: string, completedAt: string, weightKg: number): SetRow => ({
+    id: workoutId + completedAt,
+    workoutId,
+    exerciseId: 'm-leg-press',
+    setIndex: 0,
+    isWarmup: false,
+    weightKg,
+    reps: 10,
+    seq: 1,
+    completedAt,
+  })
+  it('returns the latest session before the light week', () => {
+    const rows = [row('a', '2026-10-20T10:00:00+08:00', 100), row('b', '2026-10-28T10:00:00+08:00', 90)]
+    expect(pickLastSession(rows, lw).map((r) => r.weightKg)).toEqual([100])
+    expect(pickLastSession(rows, []).map((r) => r.weightKg)).toEqual([90])
+  })
+  it('falls back to the light session when nothing earlier exists', () => {
+    expect(pickLastSession([row('b', '2026-10-28T10:00:00+08:00', 90)], lw).map((r) => r.weightKg)).toEqual([90])
+  })
+  it('returns nothing when there are no rows', () => {
+    expect(pickLastSession([], lw)).toEqual([])
+  })
+  it('returns all rows of the picked workout sorted by seq', () => {
+    const rows = [
+      { ...row('a', '2026-10-20T10:05:00+08:00', 100), seq: 2 },
+      { ...row('a', '2026-10-20T10:00:00+08:00', 95), seq: 1 },
+      row('b', '2026-10-28T10:00:00+08:00', 90),
+    ]
+    expect(pickLastSession(rows, lw).map((r) => r.weightKg)).toEqual([95, 100])
   })
 })

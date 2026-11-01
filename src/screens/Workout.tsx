@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { db } from '../db'
+import { EMPTY_COACH, loadCoachState } from '../coachStore'
 import {
   countSets,
   distinctWeights,
@@ -12,7 +13,7 @@ import {
   prefillRows,
   weightStep,
 } from '../history'
-import type { Equipment, Exercise, Outlet, SetRow, Workout as WorkoutT } from '../types'
+import type { CoachState, Equipment, Exercise, Outlet, SetRow, Workout as WorkoutT } from '../types'
 import { nextSeq, sgIso, shortOutlet, uuid } from '../util'
 import Stepper from '../components/Stepper'
 import BellChips from '../components/BellChips'
@@ -33,6 +34,7 @@ export default function Workout({ workoutId, onDone }: Props) {
   const [exercises, setExercises] = useState<Record<string, Exercise>>({})
   const [equipment, setEquipment] = useState<Record<string, Equipment>>({})
   const [sets, setSets] = useState<SetRow[]>([])
+  const [coach, setCoach] = useState<CoachState>(EMPTY_COACH)
   const [lastLines, setLastLines] = useState<Record<string, string>>({})
   const [bellExtras, setBellExtras] = useState<Record<string, number[]>>({})
   const [picking, setPicking] = useState(false)
@@ -65,11 +67,12 @@ export default function Workout({ workoutId, onDone }: Props) {
       onDone()
       return
     }
-    const [o, exList, eqList, rowsRaw] = await Promise.all([
+    const [o, exList, eqList, rowsRaw, coachState] = await Promise.all([
       db.outlets.get(w.outletId),
       db.exercises.toArray(),
       db.equipment.toArray(),
       db.sets.where('workoutId').equals(workoutId).toArray(),
+      loadCoachState(),
     ])
     const exMap = Object.fromEntries(exList.map((e) => [e.id, e]))
     const rows = knownRows(rowsRaw, exMap).sort((a, b) => a.seq - b.seq)
@@ -79,11 +82,12 @@ export default function Workout({ workoutId, onDone }: Props) {
     for (const exId of new Set(rows.map((r) => r.exerciseId))) {
       const ex = exMap[exId]
       const eqId = rows.find((r) => r.exerciseId === exId)?.equipmentId
-      lines[exId] = formatLast(ex, await lastSession(ex, eqId, workoutId))
+      lines[exId] = formatLast(ex, await lastSession(ex, eqId, workoutId, coachState.lightWeeks))
       if (ex.equipmentType === 'kettlebell') extras[exId] = await distinctWeights(exId)
     }
 
     setWorkout(w)
+    setCoach(coachState)
     setOutlet(o ?? null)
     setExercises(exMap)
     setEquipment(Object.fromEntries(eqList.map((e) => [e.id, e])))
@@ -115,7 +119,7 @@ export default function Workout({ workoutId, onDone }: Props) {
     let eq = equipmentId ? await db.equipment.get(equipmentId) : undefined
     if (!eq && keyedByEquipment(ex)) eq = await getOrCreateEquipment(ex, outlet)
 
-    const last = await lastSession(ex, eq?.id, workout.id)
+    const last = await lastSession(ex, eq?.id, workout.id, coach.lightWeeks)
     const rows = prefillRows(ex, eq, workout.id, last)
     await db.sets.bulkAdd(rows)
 
