@@ -1,7 +1,7 @@
 // Dev-server-only test data for the Phase 3 phone test. Never runs in the
 // production build: main.tsx only calls it under import.meta.env.DEV.
 //
-//   ?seed=coach   inserts six weeks of fake history (ids start with "seed-")
+//   ?seed=coach   inserts six weeks of fake history (ids start with "seed-") and resets the coach state
 //   ?seed=clear   removes every fake row and the coach state (light weeks, snooze)
 //
 // Real workouts are never touched: every seeded row carries a "seed-" id.
@@ -76,7 +76,10 @@ export async function seedCoach(): Promise<{ workouts: number; sets: number }> {
       sets.push(row)
     })
   })
-  await db.transaction('rw', db.outlets, db.equipment, db.workouts, db.sets, async () => {
+  // Also reset the coach state (a snooze or a running light week from an
+  // earlier try), so every seed load starts the light week checks afresh.
+  await db.transaction('rw', db.outlets, db.equipment, db.workouts, db.sets, db.coach, async () => {
+    await db.coach.clear()
     await db.outlets.put(OUTLET_ROW)
     await db.equipment.bulkPut(equipment)
     await db.workouts.bulkPut(workouts)
