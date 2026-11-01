@@ -1,15 +1,25 @@
 import { describe, it, expect } from 'vitest'
 import {
+  coachRows,
   countOf,
+  daysLeft,
   e1rm,
   formatTarget,
+  history,
   inLightWeek,
+  isPr,
   isRepsOnly,
   keyOf,
+  keyTitle,
   lightLoad,
+  lightWeekDue,
+  lightWeekRunning,
   lineFor,
   nextLoad,
+  progressed,
+  score,
   sessionsFor,
+  stallOf,
   suggestNext,
   workingWeight,
   type Session,
@@ -393,5 +403,298 @@ describe('lineFor', () => {
     expect(lineFor(swing, t, [])).toEqual({ kicker: 'Top of the range', text: 'Try a bigger bell' })
     expect(lineFor(swing, { state: 'light', tag: 'light', w: 16, count: 10, sets: 2 }, [])).toEqual({ kicker: 'Light week', text: '16 × 10, two sets' })
     expect(lineFor(deadBug, { state: 'light', tag: 'light', w: 0, count: 8, sets: 6 }, [])).toEqual({ kicker: 'Light week', text: 'BW × 8, 6 sets' })
+  })
+})
+
+const flat = (d: string) => S([[100, 12], [100, 12], [100, 10]], 8, d)
+const NOW = '2026-11-01T10:00:00+08:00'
+
+describe('progressed and score', () => {
+  it('counts a higher weight, more reps at the weight, or a higher estimate', () => {
+    const a = toSession(flat('2026-10-10'))
+    expect(progressed(legPress, a, toSession(flat('2026-10-17')))).toBe(false)
+    expect(progressed(legPress, a, toSession(S([[100, 12], [100, 12], [100, 11]])))).toBe(true)
+    expect(progressed(legPress, a, toSession(S([[102.5, 8], [102.5, 8]])))).toBe(true)
+    expect(progressed(legPress, a, toSession(S([[95, 12], [95, 12], [95, 12]])))).toBe(false)
+  })
+  it('counts a higher estimate even when the working weight did not move', () => {
+    const a = toSession(S([[100, 10], [100, 10], [100, 8]]))
+    const b = toSession(S([[100, 8], [100, 8], [105, 10]])) // working weight stays 100 (105 used once), best set rose
+    expect(workingWeight(legPress, b.rows).w).toBe(100)
+    expect(progressed(legPress, a, b)).toBe(true) // 105 * (1 + 10/30) = 140 > 133.3
+  })
+  it('scores by lift kind', () => {
+    expect(score(legPress, S([[100, 12], [60, 12, true]]).rows)).toEqual([140])
+    expect(score(backExtension, mkSession('2026-10-03', [[5, 8], [5, 10], [0, 15]]).rows)).toEqual([5, 10])
+    expect(score(plank, mkSession('2026-10-03', [[0, 45], [0, 60]], undefined, { durationSec: true }).rows)).toEqual([0, 60])
+    expect(score(carry, mkSession('2026-10-03', [[24, 45], [20, 60]], undefined, { durationSec: true }).rows)).toEqual([24, 45])
+    expect(score(legPress, S([[60, 20]]).rows)).toBeNull()
+  })
+})
+
+describe('stallOf', () => {
+  it('needs three sessions without progress', () => {
+    expect(stallOf(legPress, [flat('2026-10-10'), flat('2026-10-17')].map(toSession))).toBeNull()
+    expect(stallOf(legPress, [flat('2026-10-10'), flat('2026-10-17'), flat('2026-10-24')].map(toSession))).toEqual({
+      sessions: 3,
+      w: 100,
+      reps: 12,
+    })
+    expect(
+      stallOf(legPress, [flat('2026-10-03'), flat('2026-10-10'), flat('2026-10-17'), flat('2026-10-24')].map(toSession))!.sessions,
+    ).toBe(4)
+  })
+  it('counts only the trailing run, so earlier progress does not stall', () => {
+    const rising = [S([[95, 12], [95, 12]], 8, '2026-10-03'), flat('2026-10-10'), flat('2026-10-17')]
+    expect(stallOf(legPress, rising.map(toSession))).toBeNull() // one flat transition only
+    expect(stallOf(legPress, [...rising, flat('2026-10-24')].map(toSession))!.sessions).toBe(3)
+  })
+  it('counts more reps, more weight or a higher estimate as progress', () => {
+    expect(
+      stallOf(legPress, [flat('2026-10-10'), flat('2026-10-17'), S([[100, 12], [100, 12], [100, 11]], 8, '2026-10-24')].map(toSession)),
+    ).toBeNull()
+    expect(
+      stallOf(legPress, [flat('2026-10-10'), flat('2026-10-17'), S([[102.5, 10], [102.5, 9], [102.5, 8]], 9, '2026-10-24')].map(toSession)),
+    ).toBeNull()
+  })
+  it('takes the lower middle count at the working weight as reps', () => {
+    const four = (d: string) => S([[100, 12], [100, 12], [100, 10], [100, 10]], 8, d)
+    expect(stallOf(legPress, [four('2026-10-10'), four('2026-10-17'), four('2026-10-24')].map(toSession))).toEqual({
+      sessions: 3,
+      w: 100,
+      reps: 10,
+    })
+  })
+  it('restarts after a reset session, and a drop session does not restart the count', () => {
+    const reset = mkSession('2026-10-24', [[95, 10], [95, 10], [95, 10]], 8, { coach: 'reset' })
+    expect(stallOf(legPress, [flat('2026-10-03'), flat('2026-10-10'), flat('2026-10-17'), reset].map(toSession))).toBeNull()
+    // the reset session is session 1 of the new count
+    const after = [flat('2026-10-03'), flat('2026-10-10'), reset, mkSession('2026-10-31', [[95, 10], [95, 10], [95, 10]])]
+    expect(stallOf(legPress, after.map(toSession))).toBeNull()
+    const again = [...after, mkSession('2026-11-07', [[95, 10], [95, 10], [95, 10]])]
+    expect(stallOf(legPress, again.map(toSession))).toEqual({ sessions: 3, w: 95, reps: 10 })
+    const drop = mkSession('2026-10-24', [[100, 10], [100, 10], [100, 10]], 8, { coach: 'drop' })
+    expect(stallOf(legPress, [flat('2026-10-03'), flat('2026-10-10'), flat('2026-10-17'), drop].map(toSession))!.sessions).toBe(4)
+  })
+  it('ignores light sessions', () => {
+    const light = { ...toSession(flat('2026-10-17')), light: true }
+    expect(stallOf(legPress, [toSession(flat('2026-10-03')), toSession(flat('2026-10-10')), light])).toBeNull()
+    expect(stallOf(legPress, [toSession(flat('2026-10-03')), toSession(flat('2026-10-10')), light, toSession(flat('2026-10-24'))])!.sessions).toBe(3)
+  })
+})
+
+describe('isPr', () => {
+  const s1 = toSession(S([[95, 12]], 8, '2026-10-03'))
+  const s2 = toSession(S([[100, 10]], 8, '2026-10-10'))
+  it('needs two earlier sessions and a strictly higher estimate', () => {
+    expect(isPr(legPress, [s1], S([[110, 12]]).rows)).toBe(false)
+    expect(isPr(legPress, [s1, s2], S([[100, 12]]).rows)).toBe(true) // 140 > 133.3
+    expect(isPr(legPress, [s1, s2], S([[100, 10]]).rows)).toBe(false)
+  })
+  it('counts only earlier sessions that have a score toward the two', () => {
+    const empty = toSession(S([[60, 20]], 8, '2026-10-01')) // sets over fifteen reps: no estimate
+    expect(isPr(legPress, [empty, s1, s2].slice(0, 2), S([[110, 12]]).rows)).toBe(false) // empty + s1 only
+    expect(isPr(legPress, [empty, s1, s2], S([[110, 12]]).rows)).toBe(true)
+  })
+  it('compares bodyweight lifts by added load then reps, timed by load then seconds', () => {
+    const a = toSession(mkSession('2026-10-03', [[0, 12]]))
+    const b = toSession(mkSession('2026-10-10', [[0, 14]]))
+    expect(isPr(backExtension, [a, b], mkSession('2026-10-17', [[0, 15]]).rows)).toBe(true)
+    expect(isPr(backExtension, [a, b], mkSession('2026-10-17', [[5, 8]]).rows)).toBe(true)
+    expect(isPr(backExtension, [a, b], mkSession('2026-10-17', [[0, 14]]).rows)).toBe(false)
+    const t = (d: string, n: number, w = 24) => toSession(mkSession(d, [[w, n]], undefined, { durationSec: true, ex: carry }))
+    const rows = (n: number, w: number) => mkSession('2026-10-17', [[w, n]], undefined, { durationSec: true, ex: carry }).rows
+    expect(isPr(carry, [t('2026-10-03', 40), t('2026-10-10', 45)], rows(50, 24))).toBe(true)
+    expect(isPr(carry, [t('2026-10-03', 40), t('2026-10-10', 45)], rows(30, 28))).toBe(true)
+    expect(isPr(carry, [t('2026-10-03', 40), t('2026-10-10', 45)], rows(60, 20))).toBe(false)
+  })
+  it('never calls a box height a PR', () => {
+    const h = { ...legPress, id: 'box', loadMode: 'height_cm' as const }
+    const a = toSession(mkSession('2026-10-03', [[50, 5]], undefined, { ex: h }))
+    const b = toSession(mkSession('2026-10-10', [[55, 5]], undefined, { ex: h }))
+    expect(isPr(h, [a, b], mkSession('2026-10-17', [[60, 5]], undefined, { ex: h }).rows)).toBe(false)
+  })
+})
+
+describe('lightWeekDue, lightWeekRunning, daysLeft', () => {
+  it('is due 42 days after the first workout with no light week yet, and not before', () => {
+    expect(lightWeekDue(mkData([flat('2026-09-20'), flat('2026-10-20')], [legPress]), NOW)).toBe('time')
+    expect(lightWeekDue(mkData([flat('2026-09-21'), flat('2026-10-20')], [legPress]), NOW)).toBeNull()
+  })
+  it('measures time from the end of the last light week once there has been one', () => {
+    const lw = { startedAt: '2026-09-22T00:00:00+08:00', endsAt: '2026-09-29T00:00:00+08:00' }
+    expect(lightWeekDue(mkData([flat('2026-08-01'), flat('2026-10-20')], [legPress], { lightWeeks: [lw] }), NOW)).toBeNull() // 33 days
+    const old = { startedAt: '2026-09-15T00:00:00+08:00', endsAt: '2026-09-20T00:00:00+08:00' }
+    expect(lightWeekDue(mkData([flat('2026-08-01'), flat('2026-10-20')], [legPress], { lightWeeks: [old] }), NOW)).toBe('time') // 42 days
+  })
+  it('is null with no workouts', () => {
+    expect(lightWeekDue(mkData([], []), NOW)).toBeNull()
+  })
+  const twoStalls = () => {
+    const db = (d: string) => mkSession(d, [[20, 10], [20, 10], [20, 8]], 8, { ex: dbBench })
+    return mkData(
+      [flat('2026-10-10'), flat('2026-10-17'), flat('2026-10-24'), db('2026-10-11'), db('2026-10-18'), db('2026-10-25')],
+      [legPress, dbBench],
+    )
+  }
+  it('is due with two stalled lifts', () => {
+    expect(lightWeekDue(twoStalls(), NOW)).toBe('stalls')
+  })
+  it('is not due with one stalled lift', () => {
+    expect(lightWeekDue(mkData([flat('2026-10-10'), flat('2026-10-17'), flat('2026-10-24')], [legPress]), NOW)).toBeNull()
+  })
+  it('ignores stalled lifts last trained more than 28 days ago', () => {
+    const db = (d: string) => mkSession(d, [[20, 10], [20, 10], [20, 8]], 8, { ex: dbBench })
+    const data = mkData(
+      [flat('2026-10-10'), flat('2026-10-17'), flat('2026-10-24'), db('2026-09-06'), db('2026-09-13'), db('2026-09-20')],
+      [legPress, dbBench],
+    )
+    // db latest 2026-09-20 is 42 days back, so only one lift counts as stalled and the time trigger answers
+    expect(lightWeekDue(data, NOW)).toBe('time')
+  })
+  it('is due after two drops of more than five percent in four sessions', () => {
+    const s = (w: number, d: string) => S([[w, 12], [w, 12], [w, 12]], 8, d)
+    const data = mkData(
+      [s(100, '2026-10-03'), s(100, '2026-10-10'), s(94, '2026-10-17'), s(100, '2026-10-24'), s(94, '2026-10-31')],
+      [legPress],
+    )
+    expect(lightWeekDue(data, NOW)).toBe('drops')
+    // one drop is not enough, and a drop of four percent does not count
+    const one = mkData([s(100, '2026-10-10'), s(100, '2026-10-17'), s(94, '2026-10-24'), s(100, '2026-10-31')], [legPress])
+    expect(lightWeekDue(one, NOW)).toBeNull()
+    const exact = mkData([s(100, '2026-10-03'), s(96, '2026-10-10'), s(100, '2026-10-17'), s(96, '2026-10-24')], [legPress])
+    expect(lightWeekDue(exact, NOW)).toBeNull()
+  })
+  it('checks stalls before drops before time', () => {
+    const both = twoStalls()
+    both.workouts.push(flat('2026-08-01').workout) // an old first workout makes time due as well
+    both.sets.push(...flat('2026-08-01').rows)
+    expect(lightWeekDue(both, NOW)).toBe('stalls')
+  })
+  it('is quiet while running or snoozed', () => {
+    const data = mkData([flat('2026-09-01'), flat('2026-10-20')], [legPress], {
+      lightWeeks: [{ startedAt: '2026-10-30T09:00:00+08:00', endsAt: '2026-11-06T09:00:00+08:00' }],
+    })
+    expect(lightWeekDue(data, NOW)).toBeNull()
+    expect(lightWeekRunning(data.coach, NOW)).toEqual(data.coach.lightWeeks[0])
+    expect(daysLeft(data.coach.lightWeeks[0], NOW)).toBe(5)
+    expect(daysLeft(data.coach.lightWeeks[0], '2026-11-06T09:00:00+08:00')).toBe(0)
+    expect(daysLeft(data.coach.lightWeeks[0], '2026-11-08T09:00:00+08:00')).toBe(0)
+    expect(lightWeekRunning(data.coach, '2026-11-06T09:00:00+08:00')).toBeNull() // half open
+    expect(lightWeekRunning(data.coach, '2026-10-30T08:59:00+08:00')).toBeNull()
+    const snoozed = { ...data, coach: { lightWeeks: [], lightWeekSnoozedUntil: '2026-11-03T00:00:00+08:00' } }
+    expect(lightWeekDue(snoozed, NOW)).toBeNull()
+    expect(lightWeekDue({ ...snoozed, coach: { lightWeeks: [], lightWeekSnoozedUntil: '2026-10-31T00:00:00+08:00' } }, NOW)).toBe('time')
+  })
+})
+
+describe('coachRows and history', () => {
+  // Leg Press at eq1: 95 on 19 Sep, then 100 × 12 flat for three sessions (a stall of 3);
+  // Dumbbell Bench: 25 × 12, then 24 -> 25 -> 26.5 this week (a PR); first workout is 43 days old.
+  const build = () => {
+    const db = (d: string, w: number) => mkSession(d, [[w, 12], [w, 12]], 8, { ex: dbBench })
+    return mkData(
+      [
+        S([[95, 12], [95, 12], [95, 10]], 8, '2026-09-19'),
+        flat('2026-10-10'),
+        flat('2026-10-17'),
+        flat('2026-10-24'),
+        db('2026-10-10', 24),
+        db('2026-10-17', 25),
+        db('2026-10-28', 26.5),
+      ],
+      [legPress, dbBench],
+    )
+  }
+  it('orders light, stalls, PRs and writes the titles', () => {
+    const rows = coachRows(build(), NOW)
+    expect(rows.map((r) => r.kind)).toEqual(['light-due', 'stall', 'pr'])
+    expect(rows[0]).toEqual({ kind: 'light-due', reason: 'time' })
+    expect(rows[1]).toMatchObject({
+      key: 'eq:eq1',
+      exerciseId: 'm-leg-press',
+      title: 'Leg Press · Tampines West',
+      detail: 'stalled: 3 sessions at 100 × 12',
+    })
+    expect(rows[2]).toMatchObject({
+      key: 'ex:db-bench',
+      exerciseId: 'db-bench',
+      title: 'Dumbbell Bench Press',
+      detail: 'e1RM 37 kg, up from 35',
+      date: '2026-10-28',
+    })
+  })
+  it('shows a running light week first, with the days left, and no PR from light sessions', () => {
+    const data = build()
+    data.coach = { lightWeeks: [{ startedAt: '2026-10-27T00:00:00+08:00', endsAt: '2026-11-06T09:00:00+08:00' }] }
+    const rows = coachRows(data, NOW)
+    expect(rows[0]).toEqual({ kind: 'light-running', daysLeft: 5 })
+    expect(rows.map((r) => r.kind)).toEqual(['light-running', 'stall']) // the 28 Oct bench session is light, so no PR
+  })
+  it('forgets stalls older than 28 days', () => {
+    const data = mkData([flat('2026-09-19'), flat('2026-09-26'), flat('2026-10-03')], [legPress])
+    expect(coachRows(data, NOW).filter((r) => r.kind === 'stall')).toHaveLength(0) // latest is 29 days back
+    expect(coachRows(data, '2026-10-31T10:00:00+08:00').filter((r) => r.kind === 'stall')).toHaveLength(1) // 28 days back
+  })
+  it('only lists PRs from the current calendar week, newest first, one per lift', () => {
+    const db = (d: string, w: number) => mkSession(d, [[w, 12], [w, 12]], 8, { ex: dbBench })
+    const data = mkData(
+      [db('2026-10-10', 24), db('2026-10-17', 25), db('2026-10-27', 26.5), db('2026-10-30', 28), flat('2026-10-10'), flat('2026-10-17'), S([[105, 12], [105, 12]], 8, '2026-10-29')],
+      [legPress, dbBench],
+    )
+    const prs = coachRows(data, NOW).filter((r) => r.kind === 'pr')
+    expect(prs.map((r) => (r as { date: string }).date)).toEqual(['2026-10-30', '2026-10-29', '2026-10-27'])
+    expect(prs[0]).toMatchObject({ detail: 'e1RM 39 kg, up from 37' })
+    expect(coachRows(data, '2026-11-09T10:00:00+08:00').filter((r) => r.kind === 'pr')).toHaveLength(0)
+  })
+  it('words PRs on lifts with no estimate as a best set', () => {
+    const a = mkSession('2026-10-03', [[0, 12]], undefined, { ex: backExtension })
+    const b = mkSession('2026-10-10', [[0, 14]], undefined, { ex: backExtension })
+    const c = mkSession('2026-10-28', [[10, 14]], undefined, { ex: backExtension })
+    const rows = coachRows(mkData([a, b, c], [backExtension]), NOW).filter((r) => r.kind === 'pr')
+    expect(rows[0]).toMatchObject({ title: 'Back Extension', detail: 'best set 14 reps at BW+10' })
+    const t = (d: string, n: number, w: number) => mkSession(d, [[w, n]], undefined, { durationSec: true, ex: carry })
+    const timed = coachRows(mkData([t('2026-10-03', 40, 24), t('2026-10-10', 45, 24), t('2026-10-28', 60, 24)], [carry]), NOW)
+    expect(timed.find((r) => r.kind === 'pr')).toMatchObject({ detail: 'best set 60s at 24' })
+  })
+  it('titles equipment keys with the short outlet and others with the exercise name', () => {
+    const data = build()
+    expect(keyTitle(data, legPress, 'eq:eq1')).toBe('Leg Press · Tampines West')
+    expect(keyTitle(data, dbBench, 'ex:db-bench')).toBe('Dumbbell Bench Press')
+    expect(keyTitle(data, legPress, 'eq:missing')).toBe('Leg Press')
+  })
+  it('gives twelve points oldest first with the best marked', () => {
+    const data = build()
+    const early = [S([[85, 12], [85, 12]], 8, '2026-09-05'), S([[90, 12], [90, 12]], 8, '2026-09-12')]
+    data.workouts.push(...early.map((e) => e.workout))
+    data.sets.push(...early.flatMap((e) => e.rows))
+    const h = history(data, legPress, 'eq:eq1')
+    expect(h.points.length).toBeLessThanOrEqual(12)
+    expect(h.points).toHaveLength(6)
+    expect(h.points[h.points.length - 1].session.workout.startedAt > h.points[0].session.workout.startedAt).toBe(true)
+    expect(h.best!.pr).toBe(true)
+    expect(h.best!.session.workout.startedAt.startsWith('2026-10-10')).toBe(true) // first of the tied best sessions
+    expect(h.points.map((p) => p.pr)).toEqual([false, false, true, true, false, false])
+    expect(h.stall).toEqual({ sessions: 3, w: 100, reps: 12 })
+  })
+  it('limits to the last points, judges PRs against all earlier sessions and never marks light ones', () => {
+    const s = (w: number, d: string) => S([[w, 12], [w, 12]], 8, d)
+    const sessions = [s(100, '2026-09-01'), s(101, '2026-09-08'), s(102, '2026-09-15'), s(103, '2026-09-22'), s(104, '2026-09-29')]
+    const data = mkData(sessions, [legPress], { lightWeeks: [{ startedAt: '2026-09-29T00:00:00+08:00', endsAt: '2026-10-06T00:00:00+08:00' }] })
+    const h = history(data, legPress, 'eq:eq1', 2)
+    expect(h.points).toHaveLength(2)
+    expect(h.points[0].pr).toBe(true) // 103 beats 100, 101, 102 outside the window
+    expect(h.points[1].pr).toBe(false) // light
+    expect(h.points[1].session.light).toBe(true)
+    expect(h.points[1].e1rm).toEqual({ kg: 104 * (1 + 12 / 30), rough: true })
+    expect(h.best!.session.workout.startedAt.startsWith('2026-09-29')).toBe(true) // light sessions can still be the best score shown
+  })
+  it('has no best for lifts without a score and nothing for an unknown key', () => {
+    const box = { ...legPress, id: 'box', loadMode: 'height_cm' as const, equipmentType: 'bodyweight' as const }
+    const data = mkData([mkSession('2026-10-10', [[50, 5]], undefined, { ex: box })], [box])
+    const h = history(data, box, 'ex:box')
+    expect(h.points).toHaveLength(1)
+    expect(h.best).toBeNull()
+    expect(history(data, box, 'ex:none')).toEqual({ points: [], best: null, stall: null })
   })
 })

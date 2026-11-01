@@ -4,8 +4,9 @@
 import { kettlebellSizesKg } from './db'
 import type { GymData } from './export'
 import { formatSession, keyedByEquipment, ratingOf, weightStep } from './history'
-import type { CoachTag, Equipment, Exercise, LightWeek, SetRow, Workout } from './types'
-import { fmt } from './util'
+import type { CoachState, CoachTag, Equipment, Exercise, LightWeek, SetRow, Workout } from './types'
+import { fmt, shortOutlet } from './util'
+import { dateOf, daysBetween, inWeek, weekOf } from './week'
 import { bellSizes } from './weights'
 
 // rows: completed, seq ascending, warm-ups included.
@@ -234,4 +235,270 @@ export function lineFor(ex: Exercise, s: Suggestion, lastRows: SetRow[]): { kick
     default:
       return { kicker: 'Feeling good?', text: formatTarget(ex, s.w, s.count) }
   }
+}
+
+// ---------------------------------------------------------------------------
+// Progress, stalls and PRs
+// ---------------------------------------------------------------------------
+
+// Lexicographic compare of two scores: negative, zero or positive.
+function compareScores(a: number[], b: number[]): number {
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    const d = (a[i] ?? 0) - (b[i] ?? 0)
+    if (d !== 0) return d
+  }
+  return 0
+}
+
+const sum = (xs: number[]) => xs.reduce((t, x) => t + x, 0)
+
+// Session b over session a: a heavier working weight, more total reps (or seconds)
+// at an equal weight, or a higher estimated one-rep max. Compared unrounded.
+export function progressed(ex: Exercise, a: Session, b: Session): boolean {
+  const wa = workingWeight(ex, a.rows)
+  const wb = workingWeight(ex, b.rows)
+  if (wb.w > wa.w) return true
+  if (wb.w === wa.w && sum(wb.counts) > sum(wa.counts)) return true
+  const ea = e1rm(ex, a.rows)
+  const eb = e1rm(ex, b.rows)
+  return ea !== null && eb !== null && eb.kg > ea.kg
+}
+
+// A lift with three or more sessions in a row without progress. Light sessions are
+// dropped and the count starts again at the latest session tagged 'reset' (that
+// session is session 1). `sessions` is the length of the trailing no-progress run
+// plus one; `reps` is the median count at the working weight of the latest session.
+export function stallOf(ex: Exercise, sessions: Session[]): Stall | null {
+  let list = sessions.filter((s) => !s.light)
+  const reset = list.map((s) => s.rows.some((r) => r.coach === 'reset')).lastIndexOf(true)
+  if (reset > 0) list = list.slice(reset)
+  if (list.length < 3) return null
+  let run = 0
+  for (let i = list.length - 1; i > 0 && !progressed(ex, list[i - 1], list[i]); i--) run++
+  if (run < 2) return null
+  const { w, counts } = workingWeight(ex, list[list.length - 1].rows)
+  const sorted = [...counts].sort((a, b) => a - b)
+  return { sessions: run + 1, w, reps: sorted[Math.floor((sorted.length - 1) / 2)] }
+}
+
+// What a PR compares: the estimate for lifts that have one; added load then reps for
+// bodyweight lifts; load then seconds for timed ones; nothing for box height.
+export function score(ex: Exercise, rows: SetRow[]): number[] | null {
+  if (ex.loadMode === 'height_cm') return null
+  if (ex.loadMode === 'bodyweight_plus' || ex.loadMode === 'timed') {
+    const work = workingRows(rows)
+    if (work.length === 0) return null
+    const load = Math.max(...work.map((r) => r.weightKg ?? 0))
+    return [load, Math.max(...work.filter((r) => (r.weightKg ?? 0) === load).map((r) => countOf(ex, r)))]
+  }
+  const est = e1rm(ex, rows)
+  return est ? [est.kg] : null
+}
+
+// `earlier`: finished sessions before this one, light ones excluded. Needs two earlier
+// sessions that have a score, and a score strictly above every one of them.
+export function isPr(ex: Exercise, earlier: Session[], rows: SetRow[]): boolean {
+  const before = earlier.map((s) => score(ex, s.rows)).filter((x): x is number[] => x !== null)
+  const now = score(ex, rows)
+  if (before.length < 2 || now === null) return false
+  return before.every((b) => compareScores(now, b) > 0)
+}
+
+// ---------------------------------------------------------------------------
+// Light week triggers
+// ---------------------------------------------------------------------------
+
+const DAY_MS = 86_400_000
+const RECENT_DAYS = 28
+const TIME_DAYS = 42
+
+export function lightWeekRunning(state: CoachState, now: string): LightWeek | null {
+  const t = Date.parse(now)
+  return state.lightWeeks.find((w) => Date.parse(w.startedAt) <= t && t < Date.parse(w.endsAt)) ?? null
+}
+
+export function daysLeft(lw: LightWeek, now: string): number {
+  return Math.max(0, Math.ceil((Date.parse(lw.endsAt) - Date.parse(now)) / DAY_MS))
+}
+
+type Lift = { key: string; ex: Exercise; sessions: Session[] }
+
+// Every lift key with a finished working session, with its sessions oldest first.
+function lifts(data: GymData): Lift[] {
+  const exercises = new Map(data.exercises.map((e) => [e.id, e]))
+  const finished = new Set(data.workouts.filter((w) => w.endedAt && w.type === 'strength').map((w) => w.id))
+  const keys = new Map<string, Exercise>()
+  for (const row of data.sets) {
+    const ex = exercises.get(row.exerciseId)
+    if (ex && row.completedAt && finished.has(row.workoutId)) keys.set(keyOf(ex, row), ex)
+  }
+  const out: Lift[] = []
+  for (const [key, ex] of keys) {
+    const sessions = sessionsFor(data, key)
+    if (sessions.length > 0) out.push({ key, ex, sessions })
+  }
+  return out
+}
+
+const latestOf = (l: Lift) => l.sessions[l.sessions.length - 1].workout.startedAt
+
+type StalledLift = Lift & { stall: Stall }
+
+// Stalled lifts whose latest session is within the last 28 days, latest session first.
+function recentStalls(data: GymData, now: string): StalledLift[] {
+  const out: StalledLift[] = []
+  for (const l of lifts(data)) {
+    if (daysBetween(dateOf(latestOf(l)), dateOf(now)) > RECENT_DAYS) continue
+    const stall = stallOf(l.ex, l.sessions)
+    if (stall) out.push({ ...l, stall })
+  }
+  return out.sort((a, b) => latestOf(b).localeCompare(latestOf(a)))
+}
+
+// Two transitions among the last four sessions where the estimate fell by more than 5 percent.
+function hasDrops(l: Lift): boolean {
+  const last = l.sessions.filter((s) => !s.light).slice(-4)
+  let drops = 0
+  for (let i = 1; i < last.length; i++) {
+    const a = e1rm(l.ex, last[i - 1].rows)
+    const b = e1rm(l.ex, last[i].rows)
+    if (a && b && b.kg < a.kg * 0.95) drops++
+  }
+  return drops >= 2
+}
+
+// Why a light week is due, checked in this order; null while one runs or is snoozed.
+export function lightWeekDue(data: GymData, now: string): 'stalls' | 'drops' | 'time' | null {
+  const { coach } = data
+  if (lightWeekRunning(coach, now)) return null
+  if (coach.lightWeekSnoozedUntil && Date.parse(coach.lightWeekSnoozedUntil) > Date.parse(now)) return null
+  if (recentStalls(data, now).length >= 2) return 'stalls'
+  if (lifts(data).some(hasDrops)) return 'drops'
+  const lastEnd = coach.lightWeeks.map((w) => w.endsAt).sort().pop()
+  const first = data.workouts
+    .filter((w) => w.endedAt && w.type === 'strength')
+    .map((w) => w.startedAt)
+    .sort()[0]
+  const since = lastEnd ?? first
+  if (since && daysBetween(dateOf(since), dateOf(now)) >= TIME_DAYS) return 'time'
+  return null
+}
+
+// ---------------------------------------------------------------------------
+// The coach card rows and the per-lift history
+// ---------------------------------------------------------------------------
+
+export type CoachRow =
+  | { kind: 'light-running'; daysLeft: number }
+  | { kind: 'light-due'; reason: 'stalls' | 'drops' | 'time' }
+  | { kind: 'stall'; key: string; exerciseId: string; title: string; detail: string }
+  | { kind: 'pr'; key: string; exerciseId: string; title: string; detail: string; date: string }
+
+// "Leg Press · Tampines West" for a machine key, the exercise name otherwise.
+export function keyTitle(data: GymData, ex: Exercise, key: string): string {
+  if (key.startsWith('eq:')) {
+    const eq = data.equipment.find((e) => e.id === key.slice(3))
+    const outlet = eq && data.outlets.find((o) => o.id === eq.outletId)
+    if (outlet) return `${ex.name} · ${shortOutlet(outlet.name)}`
+  }
+  return ex.name
+}
+
+// "BW+10", "BW" or a plain load, for the best-set wording.
+function loadLabel(ex: Exercise, load: number): string {
+  if (ex.loadMode === 'bodyweight_plus') return load > 0 ? `BW+${fmt(load)}` : 'BW'
+  return fmt(load)
+}
+
+function prDetail(ex: Exercise, earlier: Session[], rows: SetRow[]): string {
+  const now = score(ex, rows)!
+  if (ex.loadMode === 'bodyweight_plus' || ex.loadMode === 'timed') {
+    const best = ex.loadMode === 'timed' ? `${fmt(now[1])}s` : `${fmt(now[1])} reps`
+    return now[0] > 0 || ex.loadMode === 'bodyweight_plus'
+      ? `best set ${best} at ${loadLabel(ex, now[0])}`
+      : `best set ${best}`
+  }
+  const prev = Math.max(...earlier.map((s) => score(ex, s.rows)?.[0] ?? 0))
+  return `e1RM ${Math.round(now[0])} kg, up from ${Math.round(prev)}`
+}
+
+// Light row, then stalls (latest session first), then this calendar week's PRs (newest first).
+export function coachRows(data: GymData, now: string): CoachRow[] {
+  const rows: CoachRow[] = []
+  const running = lightWeekRunning(data.coach, now)
+  if (running) rows.push({ kind: 'light-running', daysLeft: daysLeft(running, now) })
+  else {
+    const reason = lightWeekDue(data, now)
+    if (reason) rows.push({ kind: 'light-due', reason })
+  }
+
+  for (const l of recentStalls(data, now)) {
+    rows.push({
+      kind: 'stall',
+      key: l.key,
+      exerciseId: l.ex.id,
+      title: keyTitle(data, l.ex, l.key),
+      detail: `stalled: ${l.stall.sessions} sessions at ${formatTarget(l.ex, l.stall.w, l.stall.reps)}`,
+    })
+  }
+
+  const week = weekOf(now)
+  const prs: { at: string; row: CoachRow }[] = []
+  for (const l of lifts(data)) {
+    const plain = l.sessions.filter((s) => !s.light)
+    plain.forEach((s, i) => {
+      if (!inWeek(s.workout.startedAt, week)) return
+      const earlier = plain.slice(0, i)
+      if (!isPr(l.ex, earlier, s.rows)) return
+      prs.push({
+        at: s.workout.startedAt,
+        row: {
+          kind: 'pr',
+          key: l.key,
+          exerciseId: l.ex.id,
+          title: keyTitle(data, l.ex, l.key),
+          detail: prDetail(l.ex, earlier, s.rows),
+          date: dateOf(s.workout.startedAt),
+        },
+      })
+    })
+  }
+  prs.sort((a, b) => b.at.localeCompare(a.at))
+  return [...rows, ...prs.map((p) => p.row)]
+}
+
+export type HistoryPoint = { session: Session; e1rm: { kg: number; rough: boolean } | null; pr: boolean }
+
+// The last `limit` sessions of a lift, oldest first, light ones included (never a PR).
+// PRs are judged against every earlier session, not only the shown ones. `best` is the
+// shown point with the highest score (the earliest when tied), null when none has one.
+export function history(
+  data: GymData,
+  ex: Exercise,
+  key: string,
+  limit = 12,
+): { points: HistoryPoint[]; best: HistoryPoint | null; stall: Stall | null } {
+  const all = sessionsFor(data, key)
+  const from = Math.max(0, all.length - limit)
+  const points: HistoryPoint[] = all.slice(from).map((session, i) => ({
+    session,
+    e1rm: e1rm(ex, session.rows),
+    pr:
+      !session.light &&
+      isPr(
+        ex,
+        all.slice(0, from + i).filter((s) => !s.light),
+        session.rows,
+      ),
+  }))
+  let best: HistoryPoint | null = null
+  let bestScore: number[] | null = null
+  for (const p of points) {
+    const sc = score(ex, p.session.rows)
+    if (sc && (!bestScore || compareScores(sc, bestScore) > 0)) {
+      best = p
+      bestScore = sc
+    }
+  }
+  return { points, best, stall: stallOf(ex, all) }
 }
