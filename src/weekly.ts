@@ -1,8 +1,9 @@
 // The weekly Markdown summary Shafi shares to his claude.ai Project. A pure
 // function over the raw tables (no database access). It states what happened
-// and nothing more: no verdicts, averages, e1RM or suggestions.
+// and what the app itself estimates or flags (e1RM, PRs, stalls, resets, light
+// weeks, hard sets): no averages and no suggested weights.
 import { isOverridden } from './cardio'
-import { keyOf } from './coach'
+import { coachRows, e1rm, isPr, keyOf, score, sessionsFor } from './coach'
 import { cardioModalities } from './db'
 import type { GymData } from './export'
 import { formatSession, ratingOf } from './history'
@@ -23,6 +24,7 @@ type Ctx = {
   exercises: Record<string, Exercise>
   finished: Workout[] // every finished workout, by startedAt ascending
   thisWeek: Workout[] // the finished ones that start in the week
+  generatedAt: string
   outletName: (id: string) => string
 }
 
@@ -34,16 +36,17 @@ export function weeklySummary(data: GymData, week: Week, generatedAt: string): s
     exercises: Object.fromEntries(data.exercises.map((e) => [e.id, e])),
     finished,
     thisWeek: finished.filter((w) => inWeek(w.startedAt, week)),
+    generatedAt,
     outletName: (id) => shortOutlet(data.outlets.find((o) => o.id === id)?.name ?? id),
   }
-  const sections = [header(week, generatedAt), sessions(ctx), strength(ctx), muscles(ctx), cardio(ctx), bodyweight(ctx), notes(ctx)]
+  const sections = [header(week, generatedAt), sessions(ctx), coach(ctx), strength(ctx), muscles(ctx), cardio(ctx), bodyweight(ctx), notes(ctx)]
   return sections.filter((s): s is string => s !== null).join('\n\n') + '\n'
 }
 
 function header(week: Week, generatedAt: string): string {
   return [
     `# Gym Log · week ${week.week} · ${dayLabel(week.start)} to ${dayLabelYear(week.end)}`,
-    `Generated ${dayLabelYear(dateOf(generatedAt))} ${generatedAt.slice(11, 16)} (+08:00). Weights in kg. "ph" = per hand. Effort is RPE out of 10.`,
+    `Generated ${dayLabelYear(dateOf(generatedAt))} ${generatedAt.slice(11, 16)} (+08:00). Weights in kg. "ph" = per hand. Effort is RPE out of 10. e1RM is Epley from the best working set; "~" means over ten reps.`,
   ].join('\n')
 }
 
@@ -83,6 +86,91 @@ function weekWorkingRows(ctx: Ctx): SetRow[] {
   return ctx.data.sets.filter((s) => ids.has(s.workoutId) && s.completedAt && !s.isWarmup && ctx.exercises[s.exerciseId])
 }
 
+// The lift keys worked this week, each with its earliest row, in order of first appearance.
+function weekKeys(ctx: Ctx): [string, SetRow][] {
+  const first = new Map<string, SetRow>()
+  for (const s of weekWorkingRows(ctx)) {
+    const key = keyOf(ctx.exercises[s.exerciseId], s)
+    const seen = first.get(key)
+    if (!seen || s.completedAt! < seen.completedAt!) first.set(key, s)
+  }
+  return [...first.entries()].sort((a, b) => a[1].completedAt!.localeCompare(b[1].completedAt!))
+}
+
+// "Leg Press (Tampines West machine)" for a machine key, the exercise name otherwise.
+// Shared by the strength headings and the Coach bullets.
+function keyLabel(ctx: Ctx, key: string, sampleRow: SetRow): string {
+  let label = ctx.exercises[sampleRow.exerciseId].name
+  if (key.startsWith('eq:')) {
+    const equipment = ctx.data.equipment.find((e) => e.id === sampleRow.equipmentId)
+    if (equipment) label += ` (${ctx.outletName(equipment.outletId)} machine)`
+  }
+  return label
+}
+
+// "best set 12 reps at BW+10" and the like, for lifts with no estimate (as the coach card words it).
+function bestSet(ex: Exercise, rows: SetRow[]): string {
+  const now = score(ex, rows)!
+  const best = ex.loadMode === 'timed' ? `${fmt(now[1])}s` : `${fmt(now[1])} reps`
+  if (ex.loadMode === 'bodyweight_plus') return `best set ${best} at ${now[0] > 0 ? `BW+${fmt(now[0])}` : 'BW'}`
+  return now[0] > 0 ? `best set ${best} at ${fmt(now[0])}` : `best set ${best}`
+}
+
+// PRs, current stalls, resets and drops taken, and light weeks, in that order; null when none.
+function coach(ctx: Ctx): string | null {
+  const lines: string[] = []
+
+  const prs: { at: string; line: string }[] = []
+  for (const [key, sample] of weekKeys(ctx)) {
+    const ex = ctx.exercises[sample.exerciseId]
+    const plain = sessionsFor(ctx.data, key).filter((s) => !s.light)
+    plain.forEach((s, i) => {
+      if (!inWeek(s.workout.startedAt, ctx.week)) return
+      const earlier = plain.slice(0, i)
+      if (!isPr(ex, earlier, s.rows)) return
+      const now = score(ex, s.rows)!
+      const detail =
+        ex.loadMode === 'bodyweight_plus' || ex.loadMode === 'timed'
+          ? bestSet(ex, s.rows)
+          : `e1RM ${Math.round(now[0])}, up from ${Math.round(Math.max(...earlier.map((x) => score(ex, x.rows)?.[0] ?? 0)))}`
+      prs.push({ at: s.workout.startedAt, line: `- PR: ${keyLabel(ctx, key, sample)} · ${detail} · ${dayLabel(dateOf(s.workout.startedAt))}` })
+    })
+  }
+  lines.push(...prs.sort((a, b) => a.at.localeCompare(b.at)).map((p) => p.line))
+
+  for (const r of coachRows(ctx.data, ctx.generatedAt)) {
+    if (r.kind !== 'stall') continue
+    const sample = ctx.data.sets.find((s) => ctx.exercises[s.exerciseId] && keyOf(ctx.exercises[s.exerciseId], s) === r.key)
+    if (!sample) continue
+    lines.push(`- Stalled: ${keyLabel(ctx, r.key, sample)} · ${r.detail.replace(/^stalled: /, '')}`)
+  }
+
+  for (const [tag, text] of [['reset', 'Reset taken'], ['drop', 'Drop taken']] as const) {
+    for (const w of ctx.thisWeek) {
+      const seen = new Set<string>()
+      const tagged = ctx.data.sets
+        .filter((s) => s.workoutId === w.id && s.completedAt && s.coach === tag && ctx.exercises[s.exerciseId])
+        .sort((a, b) => a.seq - b.seq)
+      for (const s of tagged) {
+        const key = keyOf(ctx.exercises[s.exerciseId], s)
+        if (seen.has(key)) continue
+        seen.add(key)
+        lines.push(`- ${text}: ${keyLabel(ctx, key, s)} · to ${fmt(s.weightKg ?? 0)} · ${dayLabel(dateOf(w.startedAt))}`)
+      }
+    }
+  }
+
+  const weekStart = Date.parse(`${ctx.week.start}T00:00:00+08:00`)
+  const weekEnd = Date.parse(`${ctx.week.end}T23:59:59+08:00`)
+  for (const lw of ctx.data.coach.lightWeeks) {
+    if (Date.parse(lw.startedAt) > weekEnd || Date.parse(lw.endsAt) <= weekStart) continue
+    const running = Date.parse(lw.endsAt) > Date.parse(ctx.generatedAt)
+    lines.push(`- Light week: ${dayLabel(dateOf(lw.startedAt))} to ${dayLabel(dateOf(lw.endsAt))}${running ? ' (running)' : ''}`)
+  }
+
+  return lines.length > 0 ? `## Coach\n${lines.join('\n')}` : null
+}
+
 function strength(ctx: Ctx): string | null {
   const inWeekRows = weekWorkingRows(ctx)
   if (inWeekRows.length === 0) return null
@@ -100,23 +188,10 @@ function strength(ctx: Ctx): string | null {
     perWorkout.get(s.workoutId)!.push(s)
   }
 
-  // Headings by first appearance in the week.
-  const first = new Map<string, { at: string; row: SetRow }>()
-  for (const s of inWeekRows) {
-    const key = keyOf(ctx.exercises[s.exerciseId], s)
-    const seen = first.get(key)
-    if (!seen || s.completedAt! < seen.at) first.set(key, { at: s.completedAt!, row: s })
-  }
-  const keys = [...first.entries()].sort((a, b) => a[1].at.localeCompare(b[1].at))
-
   const blocks = ['## Strength, by exercise']
-  for (const [key, { row: sample }] of keys) {
+  for (const [key, sample] of weekKeys(ctx)) {
     const ex = ctx.exercises[sample.exerciseId]
-    let heading = `### ${ex.name}`
-    if (key.startsWith('eq:')) {
-      const equipment = ctx.data.equipment.find((e) => e.id === sample.equipmentId)
-      if (equipment) heading += ` (${ctx.outletName(equipment.outletId)} machine)`
-    }
+    const heading = `### ${keyLabel(ctx, key, sample)}`
 
     // Sessions with at least one working set for this key, newest first.
     const sessionsForKey = [...byKey.get(key)!.entries()]
@@ -131,6 +206,8 @@ function strength(ctx: Ctx): string | null {
       const parts = [dayLabel(dateOf(x.workout.startedAt)), formatSession(ex, x.rows)]
       if (rpe !== undefined) parts.push(`RPE ${rpe}`)
       if (pain) parts.push(pain)
+      const est = e1rm(ex, x.rows)
+      if (est) parts.push(`e1RM ${est.rough ? '~' : ''}${Math.round(est.kg)}`)
       return parts.join(' · ')
     }
     blocks.push([heading, ...current.map((x) => `- **${bullet(x)}**`), ...prior.map((x) => `- ${bullet(x)}`)].join('\n'))
@@ -138,17 +215,27 @@ function strength(ctx: Ctx): string | null {
   return blocks.join('\n\n')
 }
 
+// "Legs 9 (hard 6)": working sets, and those from an exercise session rated RPE 8 or more.
 function muscles(ctx: Ctx): string | null {
   const rows = weekWorkingRows(ctx)
   if (rows.length === 0) return null
+  const effort = new Map<string, number | undefined>() // per workout and exercise
+  for (const s of ctx.data.sets) {
+    const id = `${s.workoutId}|${s.exerciseId}`
+    if (effort.has(id) || !ctx.thisWeek.some((w) => w.id === s.workoutId)) continue
+    effort.set(id, ratingOf(ctx.data.sets.filter((x) => x.workoutId === s.workoutId && x.exerciseId === s.exerciseId)).rpe)
+  }
   const counts = new Map<string, number>(CHIPS.map((c) => [c, 0]))
+  const hard = new Map<string, number>(CHIPS.map((c) => [c, 0]))
   for (const s of rows) {
+    const isHard = (effort.get(`${s.workoutId}|${s.exerciseId}`) ?? 0) >= 8
     for (const chip of new Set(ctx.exercises[s.exerciseId].primaryMuscles.flatMap(chipsFor))) {
       counts.set(chip, counts.get(chip)! + 1)
+      if (isHard) hard.set(chip, hard.get(chip)! + 1)
     }
   }
   // Array.prototype.sort is stable, so ties keep the CHIPS order.
-  const line = [...CHIPS].sort((a, b) => counts.get(b)! - counts.get(a)!).map((c) => `${c} ${counts.get(c)}`)
+  const line = [...CHIPS].sort((a, b) => counts.get(b)! - counts.get(a)!).map((c) => `${c} ${counts.get(c)} (hard ${hard.get(c)})`)
   return `## Working sets per muscle this week\n${line.join(' · ')}`
 }
 
