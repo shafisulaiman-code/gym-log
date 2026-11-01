@@ -442,8 +442,28 @@ h3,
 .ex-head .ex-title {
   flex: 1;
   min-width: 0;
-  min-height: var(--tap);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   text-align: left;
+}
+
+.ex-head .ex-name,
+.ex-head .ex-last {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  text-align: left;
+}
+
+.ex-head .ex-name {
+  display: flex;
+  align-items: flex-end;
+}
+
+.ex-head .ex-last {
+  display: flex;
+  align-items: flex-start;
 }
 
 .ex-head h2 {
@@ -1697,4 +1717,166 @@ button.card.folded {
   min-width: 0;
   padding: 0 10px;
   font-size: 15px;
+}
+
+/* Lift history sheet */
+.hist-kicker {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.hist-title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 2px 0 0;
+}
+
+.hist-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 18px;
+  margin: 12px 0 4px;
+}
+
+.hist-stats b {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.hist-stats span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.hist-stats .pr b {
+  color: var(--accent);
+}
+
+.spark {
+  display: block;
+  width: 100%;
+  height: 120px;
+  margin: 6px 0 2px;
+}
+
+.spark-grid {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.spark-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.spark-dot {
+  fill: var(--accent);
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.spark-dot.rough {
+  fill: var(--card);
+}
+
+.spark-dot.best {
+  fill: var(--accent);
+  stroke: var(--accent-bright);
+  stroke-width: 3;
+}
+
+.hist-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--faint);
+  margin-bottom: 10px;
+}
+
+.hist-list {
+  border-top: 1px solid var(--line);
+}
+
+.hist-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.hist-row .d {
+  flex: none;
+  width: 72px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hist-row .s {
+  flex: 1;
+  min-width: 0;
+}
+
+.hist-row .rpe {
+  color: var(--muted);
+}
+
+.hist-row .pain {
+  color: var(--warn);
+}
+
+.hist-row .e {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hist-row .e.rough {
+  color: var(--faint);
+}
+
+.hist-row .e.pr {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+/* Scoped: the exercise picker has its own .tag */
+.hist-row .tag {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.hist-row .tag.pr {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.hist-row .tag.stall {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.hist-row .tag.light {
+  margin-left: 8px;
+  background: var(--raised);
+  color: var(--muted);
+}
+
+.hist-note {
+  font-size: 12px;
+  color: var(--faint);
+  margin-top: 10px;
 }

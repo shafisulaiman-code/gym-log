@@ -25,6 +25,7 @@ import Thumb from '../components/Thumb'
 import NudgeLine from './NudgeLine'
 import Picker from './Picker'
 import FinishSheet from './FinishSheet'
+import HistorySheet from './HistorySheet'
 import TechniqueSheet from './TechniqueSheet'
 import { nextSet, type NextSet } from '../nextSet'
 import { formatRest, restState, REST_AFTER_EXERCISE, type Rest } from '../rest'
@@ -48,6 +49,7 @@ export default function Workout({ workoutId, onDone }: Props) {
   const [picking, setPicking] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [techniqueFor, setTechniqueFor] = useState<Exercise | null>(null)
+  const [historyFor, setHistoryFor] = useState<{ ex: Exercise; key: string } | null>(null)
   const [now, setNow] = useState(Date.now())
   // Cards whose every set is ticked fold to one line; a tap pins one open.
   const [pinnedOpen, setPinnedOpen] = useState<string[]>([])
@@ -350,10 +352,22 @@ export default function Workout({ workoutId, onDone }: Props) {
           <section className="card" key={exId} id={`card-${exId}`}>
             <div className="ex-head">
               <Thumb ex={ex} size={64} onClick={() => setTechniqueFor(ex)} />
-              <button type="button" className="ex-title" onClick={() => setTechniqueFor(ex)}>
-                <h2>{ex.name}</h2>
-                <LastLine text={lastLines[exId]} />
-              </button>
+              <div className="ex-title">
+                <button type="button" className="ex-name" onClick={() => setTechniqueFor(ex)}>
+                  <h2>{ex.name}</h2>
+                </button>
+                {lastLines[exId] && lastLines[exId] === formatLast(ex, []) && <LastLine text={lastLines[exId]} />}
+                {lastLines[exId] && lastLines[exId] !== formatLast(ex, []) && (
+                  <button
+                    type="button"
+                    className="ex-last"
+                    aria-label={`History for ${ex.name}`}
+                    onClick={() => setHistoryFor({ ex, key: keyOf(ex, rows[0]) })}
+                  >
+                    <LastLine text={lastLines[exId]} />
+                  </button>
+                )}
+              </div>
               {eq && keyedByEquipment(ex) && (
                 <StepPill value={weightStep(ex, eq)} onChange={(kg) => setStep(eq, kg)} />
               )}
@@ -423,6 +437,7 @@ export default function Workout({ workoutId, onDone }: Props) {
       )}
 
       <TechniqueSheet ex={techniqueFor} onClose={() => setTechniqueFor(null)} />
+      <HistorySheet data={data} ex={historyFor?.ex ?? null} keyId={historyFor?.key ?? null} onClose={() => setHistoryFor(null)} />
 
       <FinishSheet
         open={finishing}
