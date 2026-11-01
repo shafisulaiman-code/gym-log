@@ -6,12 +6,15 @@
 //
 // Real workouts are never touched: every seeded row carries a "seed-" id.
 import { db } from './db'
-import type { Equipment, SetRow, Workout } from './types'
+import type { Equipment, Outlet, SetRow, Workout } from './types'
 import { sgIso } from './util'
 
-const OUTLET = 'af-tampines-west'
-const LEG_PRESS_EQ = 'seed-eq-leg-press-tw'
-const LAT_PULLDOWN_EQ = 'seed-eq-lat-pulldown-tw'
+// The fake history lives at its own outlet, so it never mixes with a real
+// machine's history (machines are keyed per outlet). Pick "Seed Gym" on Home.
+const OUTLET = 'seed-outlet'
+const OUTLET_ROW: Outlet = { id: OUTLET, name: 'Seed Gym (test)' }
+const LEG_PRESS_EQ = 'seed-eq-leg-press'
+const LAT_PULLDOWN_EQ = 'seed-eq-lat-pulldown'
 
 type Plan = {
   daysAgo: number
@@ -45,8 +48,8 @@ function dateDaysAgo(days: number): string {
 
 export async function seedCoach(): Promise<{ workouts: number; sets: number }> {
   const equipment: Equipment[] = [
-    { id: LEG_PRESS_EQ, exerciseId: 'm-leg-press', outletId: OUTLET, label: 'Leg Press @ Tampines West', stackStepKg: 2.5 },
-    { id: LAT_PULLDOWN_EQ, exerciseId: 'm-lat-pulldown', outletId: OUTLET, label: 'Lat Pulldown @ Tampines West', stackStepKg: 5 },
+    { id: LEG_PRESS_EQ, exerciseId: 'm-leg-press', outletId: OUTLET, label: 'Leg Press @ Seed Gym', stackStepKg: 2.5 },
+    { id: LAT_PULLDOWN_EQ, exerciseId: 'm-lat-pulldown', outletId: OUTLET, label: 'Lat Pulldown @ Seed Gym', stackStepKg: 5 },
   ]
   const workouts: Workout[] = []
   const sets: SetRow[] = []
@@ -73,7 +76,8 @@ export async function seedCoach(): Promise<{ workouts: number; sets: number }> {
       sets.push(row)
     })
   })
-  await db.transaction('rw', db.equipment, db.workouts, db.sets, async () => {
+  await db.transaction('rw', db.outlets, db.equipment, db.workouts, db.sets, async () => {
+    await db.outlets.put(OUTLET_ROW)
     await db.equipment.bulkPut(equipment)
     await db.workouts.bulkPut(workouts)
     await db.sets.bulkPut(sets)
@@ -83,10 +87,11 @@ export async function seedCoach(): Promise<{ workouts: number; sets: number }> {
 
 export async function clearSeed(): Promise<void> {
   const seeded = (id: string) => id.startsWith('seed-')
-  await db.transaction('rw', db.equipment, db.workouts, db.sets, db.coach, async () => {
+  await db.transaction('rw', db.outlets, db.equipment, db.workouts, db.sets, db.coach, async () => {
     await db.sets.filter((s) => seeded(s.id)).delete()
     await db.workouts.filter((w) => seeded(w.id)).delete()
     await db.equipment.filter((e) => seeded(e.id)).delete()
+    await db.outlets.filter((o) => seeded(o.id)).delete()
     await db.coach.clear()
   })
 }
@@ -95,12 +100,19 @@ export async function clearSeed(): Promise<void> {
 export async function runDevSeed(): Promise<void> {
   const param = new URLSearchParams(location.search).get('seed')
   if (!param) return
-  if (param === 'coach') {
-    const n = await seedCoach()
-    console.info(`[seed] inserted ${n.workouts} workouts, ${n.sets} sets`)
-  } else if (param === 'clear') {
-    await clearSeed()
-    console.info('[seed] cleared seeded rows and coach state')
+  // An alert, because the phone has no console to read.
+  try {
+    if (param === 'coach') {
+      const n = await seedCoach()
+      alert(`Seed loaded: ${n.workouts} workouts, ${n.sets} sets at Seed Gym (test).`)
+    } else if (param === 'clear') {
+      await clearSeed()
+      alert('Seed cleared: fake rows and coach state removed.')
+    } else {
+      alert(`Unknown seed "${param}". Use ?seed=coach or ?seed=clear.`)
+    }
+  } catch (e) {
+    alert(`Seed failed: ${(e as Error).message}`)
   }
   history.replaceState(null, '', location.pathname)
 }
