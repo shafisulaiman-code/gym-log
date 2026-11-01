@@ -1,5 +1,5 @@
 import { db } from './db'
-import type { CoachRecord, CoachState } from './types'
+import type { CoachRecord, CoachState, LightWeek } from './types'
 import { sgIso } from './util'
 
 export const EMPTY_COACH: CoachState = { lightWeeks: [] }
@@ -24,24 +24,33 @@ async function save(state: CoachState): Promise<CoachState> {
   return state
 }
 
+const runningAt = (t: number) => (w: LightWeek) => new Date(w.startedAt).getTime() <= t && t < new Date(w.endsAt).getTime()
+
+// A new seven-day light week from now; the same state when one is already running.
+export function withLightWeekStarted(state: CoachState, now: string): CoachState {
+  if (state.lightWeeks.some(runningAt(new Date(now).getTime()))) return state
+  return { ...state, lightWeeks: [...state.lightWeeks, { startedAt: now, endsAt: plusDays(now, 7) }] }
+}
+
+// Every running light week ends now; the same state when none is running.
+export function withLightWeekEnded(state: CoachState, now: string): CoachState {
+  const running = runningAt(new Date(now).getTime())
+  if (!state.lightWeeks.some(running)) return state
+  return { ...state, lightWeeks: state.lightWeeks.map((w) => (running(w) ? { ...w, endsAt: now } : w)) }
+}
+
+// A second tap (or a week already running) writes nothing.
 export async function startLightWeek(now: string): Promise<CoachState> {
   const state = await loadCoachState()
-  return save({
-    ...state,
-    lightWeeks: [...state.lightWeeks, { startedAt: now, endsAt: plusDays(now, 7) }],
-  })
+  const next = withLightWeekStarted(state, now)
+  return next === state ? state : save(next)
 }
 
 // Ends the running light week early. Does nothing when none is running.
 export async function endLightWeek(now: string): Promise<CoachState> {
   const state = await loadCoachState()
-  const t = new Date(now).getTime()
-  const i = state.lightWeeks.findIndex(
-    (w) => new Date(w.startedAt).getTime() <= t && t < new Date(w.endsAt).getTime(),
-  )
-  if (i < 0) return state
-  const lightWeeks = state.lightWeeks.map((w, j) => (j === i ? { ...w, endsAt: now } : w))
-  return save({ ...state, lightWeeks })
+  const next = withLightWeekEnded(state, now)
+  return next === state ? state : save(next)
 }
 
 export async function snoozeLightWeek(now: string): Promise<CoachState> {
