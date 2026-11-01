@@ -272,14 +272,15 @@ function freshSessions(sessions: Session[], lightWeeks: LightWeek[]): Session[] 
 }
 
 // A lift with three or more sessions in a row without progress. Light sessions are
-// dropped, the count starts again after a light week and at the latest session tagged
-// 'reset' (that session is session 1). `sessions` is the length of the trailing no-progress run
-// plus one; `reps` is the median count at the working weight of the latest session.
+// dropped, and the count starts again after a light week and after the latest session
+// tagged 'reset' (the three sessions must all come after it). `sessions` is the length of
+// the trailing no-progress run plus one; `reps` is the median count at the working weight
+// of the latest session.
 export function stallOf(ex: Exercise, sessions: Session[], lightWeeks: LightWeek[] = []): Stall | null {
   if (ex.loadMode === 'height_cm') return null
   let list = freshSessions(sessions, lightWeeks)
   const reset = list.map((s) => s.rows.some((r) => r.coach === 'reset')).lastIndexOf(true)
-  if (reset > 0) list = list.slice(reset)
+  if (reset >= 0) list = list.slice(reset + 1)
   if (list.length < 3) return null
   let run = 0
   for (let i = list.length - 1; i > 0 && !progressed(ex, list[i - 1], list[i]); i--) run++

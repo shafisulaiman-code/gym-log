@@ -469,11 +469,12 @@ describe('stallOf', () => {
   it('restarts after a reset session, and a drop session does not restart the count', () => {
     const reset = mkSession('2026-10-24', [[95, 10], [95, 10], [95, 10]], 8, { coach: 'reset' })
     expect(stallOf(legPress, [flat('2026-10-03'), flat('2026-10-10'), flat('2026-10-17'), reset].map(toSession))).toBeNull()
-    // the reset session is session 1 of the new count
-    const after = [flat('2026-10-03'), flat('2026-10-10'), reset, mkSession('2026-10-31', [[95, 10], [95, 10], [95, 10]])]
-    expect(stallOf(legPress, after.map(toSession))).toBeNull()
-    const again = [...after, mkSession('2026-11-07', [[95, 10], [95, 10], [95, 10]])]
-    expect(stallOf(legPress, again.map(toSession))).toEqual({ sessions: 3, w: 95, reps: 10 })
+    // the three sessions must all come after the reset: reset plus two flat is not a stall
+    const at95 = (d: string) => mkSession(d, [[95, 10], [95, 10], [95, 10]])
+    const two = [flat('2026-10-03'), flat('2026-10-10'), reset, at95('2026-10-31'), at95('2026-11-07')]
+    expect(stallOf(legPress, two.map(toSession))).toBeNull()
+    const three = [...two, at95('2026-11-14')]
+    expect(stallOf(legPress, three.map(toSession))).toEqual({ sessions: 3, w: 95, reps: 10 })
     const drop = mkSession('2026-10-24', [[100, 10], [100, 10], [100, 10]], 8, { coach: 'drop' })
     expect(stallOf(legPress, [flat('2026-10-03'), flat('2026-10-10'), flat('2026-10-17'), drop].map(toSession))!.sessions).toBe(4)
   })
