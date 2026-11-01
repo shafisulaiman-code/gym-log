@@ -146,8 +146,11 @@ export function applyPlan(
 // Undoing a nudge: warm-up rows are left alone; the ghost working rows go and last
 // time's working rows come back, minus the working rows the user already made real.
 // The fresh rows take the removed ghosts' seq values (then fresh ones after the last
-// row) so the card and its sets keep their place. `mine` is every row of the exercise.
-export function undoPlan(mine: SetRow[], prefill: SetRow[]): { remove: SetRow[]; add: SetRow[] } {
+// row) so the card and its sets keep their place. Every row that stays and still carries
+// a coach tag (one he edited by hand after the tap) loses it: `patch` holds those rows
+// untagged, so the weekly file never reports an offer he undid. `mine` is every row of
+// the exercise.
+export function undoPlan(mine: SetRow[], prefill: SetRow[]): { remove: SetRow[]; add: SetRow[]; patch: SetRow[] } {
   const remove = mine.filter((r) => r.ghost && !r.isWarmup)
   const realWorking = mine.filter((r) => !r.ghost && !r.isWarmup).length
   let tail = Math.max(0, ...mine.map((r) => r.seq))
@@ -155,7 +158,13 @@ export function undoPlan(mine: SetRow[], prefill: SetRow[]): { remove: SetRow[];
     .filter((r) => !r.isWarmup)
     .slice(realWorking)
     .map((r, i) => ({ ...r, seq: remove[i]?.seq ?? ++tail }))
-  return { remove, add }
+  const patch = mine
+    .filter((r) => r.coach && !remove.includes(r))
+    .map((r) => {
+      const { coach: _coach, ...rest } = r
+      return rest
+    })
+  return { remove, add, patch }
 }
 
 // Set rows whose exercise has left the library (pruned seed row) are skipped.

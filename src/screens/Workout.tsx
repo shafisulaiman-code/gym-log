@@ -243,7 +243,7 @@ export default function Workout({ workoutId, onDone }: Props) {
     if (dropped.size > 0) db.sets.bulkDelete([...dropped])
   }
 
-  // Back to last time's working rows; warm-ups and rows the user made real stay (see undoPlan).
+  // Back to last time's working rows; warm-ups and rows the user made real stay, untagged (see undoPlan).
   async function undoSuggestion(exerciseId: string) {
     if (undoing.current) return
     const ex = exercises[exerciseId]
@@ -253,11 +253,15 @@ export default function Workout({ workoutId, onDone }: Props) {
     try {
       const eq = mine[0].equipmentId ? equipment[mine[0].equipmentId] : undefined
       const last = await lastSession(ex, eq?.id, workoutId, coach.lightWeeks)
-      const { remove, add } = undoPlan(mine, prefillRows(ex, eq, workoutId, last))
+      const { remove, add, patch } = undoPlan(mine, prefillRows(ex, eq, workoutId, last))
       const gone = new Set(remove.map((r) => r.id))
-      setSets((prev) => [...prev.filter((r) => !gone.has(r.id)), ...add].sort((a, b) => a.seq - b.seq))
+      const untagged = new Map(patch.map((r) => [r.id, r]))
+      setSets((prev) =>
+        [...prev.filter((r) => !gone.has(r.id)).map((r) => untagged.get(r.id) ?? r), ...add].sort((a, b) => a.seq - b.seq),
+      )
       await db.sets.bulkDelete([...gone])
       await db.sets.bulkAdd(add)
+      if (patch.length > 0) await db.sets.bulkPut(patch)
     } finally {
       undoing.current = false
     }

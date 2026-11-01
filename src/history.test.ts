@@ -273,11 +273,20 @@ describe('undoPlan', () => {
       row('b', 3, { ghost: true, coach: 'up' }),
       row('c', 4, { ghost: true, coach: 'up' }),
     ]
-    const { remove, add } = undoPlan(mine, prefill)
+    const { remove, add, patch } = undoPlan(mine, prefill)
     expect(remove.map((r) => r.id)).toEqual(['b', 'c'])
     expect(add).toHaveLength(2)
     expect(add.every((r) => !r.isWarmup && r.ghost === true)).toBe(true)
     expect(add.map((r) => r.seq)).toEqual([3, 4])
+    // the hand-edited row stays, with its values, and loses the tag
+    expect(patch).toHaveLength(1)
+    expect(patch[0]).toMatchObject({ id: 'a', weightKg: 105, reps: 9 })
+    expect('coach' in patch[0]).toBe(false)
+  })
+
+  it('patches nothing when no row that stays carries a tag', () => {
+    const mine = [row('w', 1, { isWarmup: true, ghost: true }), row('real', 2, {}), row('b', 3, { ghost: true, coach: 'reset' })]
+    expect(undoPlan(mine, prefill).patch).toEqual([])
   })
 
   it('numbers extra restored rows after the last row', () => {
