@@ -1241,7 +1241,7 @@ button.card.folded {
   padding-bottom: calc(var(--dock-h, 120px) + env(safe-area-inset-bottom));
 }
 
-.dock {
+.dock-stack {
   position: fixed;
   left: 50%;
   transform: translateX(-50%);
@@ -1249,26 +1249,35 @@ button.card.folded {
   width: min(448px, calc(100vw - 32px));
   z-index: 6;
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  align-items: center;
-  padding: 8px 8px 8px 16px;
+  gap: 8px;
+}
+
+.dock,
+.dock-pill {
   background: rgba(28, 28, 33, 0.92);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   border: 1px solid var(--outline);
-  border-radius: 24px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   animation: dock-in var(--t-slow) ease-out;
 }
 
+.dock {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 8px 8px 16px;
+  border-radius: 24px;
+}
+
 @keyframes dock-in {
   from {
-    transform: translate(-50%, 24px);
+    transform: translateY(24px);
     opacity: 0;
   }
   to {
-    transform: translate(-50%, 0);
+    transform: none;
     opacity: 1;
   }
 }
@@ -1356,21 +1365,21 @@ button.card.folded {
   color: var(--warn);
 }
 
-/* Drink-up: after the last set of an exercise. A chip row for effort and pain sits under
-   the countdown, spanning the dock; + Exercise takes the ✓'s place when nothing is left. */
+/* Drink-up: after the last set of an exercise. The effort and pain chips float in their own
+   pill above the dock, so the ✓ (or + Exercise, which takes its place when nothing is left)
+   never moves under the thumb. Shafi's pick, 1 Nov 2026. */
 .dock-add {
   min-height: var(--tap);
   padding: 0 18px;
   border-radius: 18px;
 }
 
-.dock-chips {
-  grid-column: 1 / -1;
-  margin: 2px -8px 0 -16px;
-  padding: 0 8px 0 16px;
+.chip-row.dock-pill {
+  padding: 8px;
+  border-radius: 22px;
 }
 
-.dock-chips-sep {
+.dock-pill-sep {
   width: 1px;
   height: 32px;
   background: var(--outline);

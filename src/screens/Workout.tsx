@@ -379,7 +379,7 @@ function UpNextDock({
   )
 
   const chips = drinkUp && rest && (
-    <div className="chip-row scroll dock-chips" aria-label="How hard was that exercise">
+    <div className="chip-row scroll dock-pill" aria-label="How hard was that exercise">
       {[6, 7, 8, 9, 10].map((n) => {
         const on = rest.row.rpe === n
         return (
@@ -395,7 +395,7 @@ function UpNextDock({
           </button>
         )
       })}
-      <i className="dock-chips-sep" aria-hidden="true" />
+      <i className="dock-pill-sep" aria-hidden="true" />
       {(['back', 'knee'] as const).map((p) => {
         const on = rest.row.painFlag === p
         return (
@@ -415,29 +415,33 @@ function UpNextDock({
 
   if ((!up || !ex) && rest && drinkUp) {
     return (
-      <div className={`dock resting${rest.over ? ' over' : ''}`} ref={rootRef}>
-        <div className="dock-body">
-          <div className="dock-kicker">{rest.over ? 'Rest · over' : 'Rest · drink up'}</div>
-          <div className="dock-time num">{formatRest(rest.remaining)}</div>
-          <div className="dock-meta">Then add the next exercise</div>
-        </div>
-        <button type="button" className="btn primary dock-add" onClick={onAddExercise}>
-          + Exercise
-        </button>
+      <div className="dock-stack" ref={rootRef}>
         {chips}
+        <div className={`dock resting${rest.over ? ' over' : ''}`}>
+          <div className="dock-body">
+            <div className="dock-kicker">{rest.over ? 'Rest · over' : 'Rest · drink up'}</div>
+            <div className="dock-time num">{formatRest(rest.remaining)}</div>
+            <div className="dock-meta">Then add the next exercise</div>
+          </div>
+          <button type="button" className="btn primary dock-add" onClick={onAddExercise}>
+            + Exercise
+          </button>
+        </div>
       </div>
     )
   }
   if (!up || !ex) {
     return (
-      <div className="dock done" ref={rootRef}>
-        <div className="dock-body">
-          <div className="dock-kicker">All sets ticked</div>
-          <div className="dock-name">Nice work</div>
+      <div className="dock-stack" ref={rootRef}>
+        <div className="dock done">
+          <div className="dock-body">
+            <div className="dock-kicker">All sets ticked</div>
+            <div className="dock-name">Nice work</div>
+          </div>
+          <button type="button" className="btn primary dock-finish" onClick={onFinish}>
+            Finish
+          </button>
         </div>
-        <button type="button" className="btn primary dock-finish" onClick={onFinish}>
-          Finish
-        </button>
       </div>
     )
   }
@@ -454,40 +458,42 @@ function UpNextDock({
     )
   const restLabel = up.number === 0 ? 'warm-up' : `set ${up.number}`
   return (
-    <div className={`dock${rest ? ' resting' : ''}${rest?.over ? ' over' : ''}`} ref={rootRef}>
-      <button type="button" className="dock-body" onClick={onJump} aria-label={`Scroll to ${ex.name}`}>
-        {rest ? (
-          <>
-            <div className="dock-kicker">
-              {rest.over ? 'Rest · over' : drinkUp ? 'Rest · drink up' : 'Rest'}
-            </div>
-            <div className="dock-time num">{formatRest(rest.remaining)}</div>
-            <div className="dock-meta">
-              Next · {ex.name} {restLabel} · {load}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="dock-kicker">Up next · {label}</div>
-            <div className="dock-name">{ex.name}</div>
-            <div className="dock-meta">{load}</div>
-          </>
-        )}
-      </button>
-      <button
-        type="button"
-        className={`dock-check${pop ? ' pop' : ''}${rest ? ' ring' : ''}`}
-        style={rest ? ({ '--ring': rest.over ? 1 : rest.remaining / rest.target } as CSSProperties) : undefined}
-        aria-label={`Complete ${ex.name} ${label}`}
-        onClick={() => {
-          setPop(true)
-          window.setTimeout(() => setPop(false), 200)
-          onTick()
-        }}
-      >
-        ✓
-      </button>
+    <div className="dock-stack" ref={rootRef}>
       {chips}
+      <div className={`dock${rest ? ' resting' : ''}${rest?.over ? ' over' : ''}`}>
+        <button type="button" className="dock-body" onClick={onJump} aria-label={`Scroll to ${ex.name}`}>
+          {rest ? (
+            <>
+              <div className="dock-kicker">
+                {rest.over ? 'Rest · over' : drinkUp ? 'Rest · drink up' : 'Rest'}
+              </div>
+              <div className="dock-time num">{formatRest(rest.remaining)}</div>
+              <div className="dock-meta">
+                Next · {ex.name} {restLabel} · {load}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="dock-kicker">Up next · {label}</div>
+              <div className="dock-name">{ex.name}</div>
+              <div className="dock-meta">{load}</div>
+            </>
+          )}
+        </button>
+        <button
+          type="button"
+          className={`dock-check${pop ? ' pop' : ''}${rest ? ' ring' : ''}`}
+          style={rest ? ({ '--ring': rest.over ? 1 : rest.remaining / rest.target } as CSSProperties) : undefined}
+          aria-label={`Complete ${ex.name} ${label}`}
+          onClick={() => {
+            setPop(true)
+            window.setTimeout(() => setPop(false), 200)
+            onTick()
+          }}
+        >
+          ✓
+        </button>
+      </div>
     </div>
   )
 }

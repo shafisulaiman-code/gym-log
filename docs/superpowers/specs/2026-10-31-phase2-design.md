@@ -216,4 +216,5 @@ Airplane mode throughout, installed PWA.
 - Rest display window of target plus 5 minutes: Claude's call.
 - "+ Exercise" replaces Finish in the dock during the drink-up window only: Claude's call.
 - Adding an exercise during the drink-up does not restart the count: Claude's call after the builder check, 31 Oct 2026.
+- Amendment, 1 Nov 2026: the chip row floats in its own pill above the dock instead of inside it, so the ✓ (or + Exercise) never moves when the chips appear: Shafi, from a mockup of three placements (option C). The dock states above read with that change.
 - Muscle set counts in the summary: Claude's call; PLAN.md lists "weekly hard sets per muscle group" under Phase 3, but a plain count over the existing chip mapping is cheap and helps the Project see what was skipped. Nothing about "hard" sets is computed.
