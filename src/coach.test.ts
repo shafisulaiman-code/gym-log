@@ -29,6 +29,7 @@ import {
   type Suggestion,
 } from './coach'
 import type { GymData } from './export'
+import { pickLastSession } from './history'
 import { boxJump, eq, legPress } from './history.test'
 import type { CoachState, CoachTag, Exercise, SetRow, Workout } from './types'
 
@@ -264,6 +265,24 @@ describe('sessionsFor and formatTarget', () => {
     ])
     expect(index.get('ex:db-bench')!.map((s) => s.workout.id)).toEqual([b.workout.id])
     expect(sessionsFor(data, 'ex:none', index)).toEqual([])
+  })
+  it('agrees with pickLastSession on light weeks: a workout is light by its startedAt', () => {
+    const lw = [{ startedAt: '2026-10-20T18:00:00+08:00', endsAt: '2026-10-24T18:00:00+08:00' }]
+    const before = mkSession('2026-10-17', [[100, 12], [100, 12]])
+    // started 17:58, two minutes before the light week ends, every row ticked after it
+    const edge = mkSession('2026-10-24', [[90, 10], [90, 10]])
+    edge.workout.startedAt = '2026-10-24T17:58:00+08:00'
+    // started exactly at endsAt: not light
+    const after = mkSession('2026-10-24', [[100, 13], [100, 13]])
+    const lastFor = (xs: { workout: Workout; rows: SetRow[] }[]) => {
+      const data = mkData(xs, [legPress], { lightWeeks: lw })
+      const sessions = sessionsFor(data, 'eq:eq1')
+      const started = new Map(data.workouts.map((w) => [w.id, w.startedAt]))
+      const picked = pickLastSession(data.sets, lw, (id) => started.get(id))
+      return { light: sessions.map((x) => x.light), picked: picked[0].workoutId }
+    }
+    expect(lastFor([before, edge])).toEqual({ light: [false, true], picked: before.workout.id })
+    expect(lastFor([before, after])).toEqual({ light: [false, false], picked: after.workout.id })
   })
   it('formats targets per load mode', () => {
     expect(formatTarget(legPress, 102.5, 10)).toBe('102.5 × 10')

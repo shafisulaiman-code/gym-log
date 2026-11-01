@@ -205,16 +205,22 @@ describe('pickLastSession', () => {
     seq: 1,
     completedAt,
   })
+  // Each test workout starts at the date of its rows, 09:00.
+  const startedAtOf = (rows: SetRow[]) => (id: string) => {
+    const r = rows.find((x) => x.workoutId === id)
+    return r ? `${r.completedAt!.slice(0, 10)}T09:00:00+08:00` : undefined
+  }
   it('returns the latest session before the light week', () => {
     const rows = [row('a', '2026-10-20T10:00:00+08:00', 100), row('b', '2026-10-28T10:00:00+08:00', 90)]
-    expect(pickLastSession(rows, lw).map((r) => r.weightKg)).toEqual([100])
-    expect(pickLastSession(rows, []).map((r) => r.weightKg)).toEqual([90])
+    expect(pickLastSession(rows, lw, startedAtOf(rows)).map((r) => r.weightKg)).toEqual([100])
+    expect(pickLastSession(rows, [], startedAtOf(rows)).map((r) => r.weightKg)).toEqual([90])
   })
   it('falls back to the light session when nothing earlier exists', () => {
-    expect(pickLastSession([row('b', '2026-10-28T10:00:00+08:00', 90)], lw).map((r) => r.weightKg)).toEqual([90])
+    const rows = [row('b', '2026-10-28T10:00:00+08:00', 90)]
+    expect(pickLastSession(rows, lw, startedAtOf(rows)).map((r) => r.weightKg)).toEqual([90])
   })
   it('returns nothing when there are no rows', () => {
-    expect(pickLastSession([], lw)).toEqual([])
+    expect(pickLastSession([], lw, () => undefined)).toEqual([])
   })
   it('returns all rows of the picked workout sorted by seq', () => {
     const rows = [
@@ -222,7 +228,14 @@ describe('pickLastSession', () => {
       { ...row('a', '2026-10-20T10:00:00+08:00', 95), seq: 1 },
       row('b', '2026-10-28T10:00:00+08:00', 90),
     ]
-    expect(pickLastSession(rows, lw).map((r) => r.weightKg)).toEqual([95, 100])
+    expect(pickLastSession(rows, lw, startedAtOf(rows)).map((r) => r.weightKg)).toEqual([95, 100])
+  })
+  it('judges a workout by its startedAt, falling back to its latest completedAt when unknown', () => {
+    // b started before the light week ended but was ticked after it: light by startedAt
+    const rows = [row('a', '2026-10-20T10:00:00+08:00', 100), row('b', '2026-11-02T00:05:00+08:00', 90)]
+    const started = (id: string) => (id === 'a' ? '2026-10-20T09:00:00+08:00' : '2026-11-01T23:58:00+08:00')
+    expect(pickLastSession(rows, lw, started).map((r) => r.weightKg)).toEqual([100])
+    expect(pickLastSession(rows, lw, () => undefined).map((r) => r.weightKg)).toEqual([90])
   })
 })
 

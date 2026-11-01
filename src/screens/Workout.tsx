@@ -66,8 +66,9 @@ export default function Workout({ workoutId, onDone }: Props) {
     .join(',')
   const nudges = useMemo(() => {
     const out: Record<string, { suggestion: Suggestion; lastRows: SetRow[] }> = {}
-    if (!data || !index) return out
-    const running = !!lightWeekRunning(data.coach, sgIso())
+    if (!data || !index || !workout) return out
+    // Inside a light week by the workout's start, as sessionsFor and lastSession judge it.
+    const running = !!lightWeekRunning(data.coach, workout.startedAt)
     for (const id of new Set(sets.map((s) => s.exerciseId))) {
       const ex = exercises[id]
       const first = sets.find((s) => s.exerciseId === id)
@@ -88,13 +89,13 @@ export default function Workout({ workoutId, onDone }: Props) {
     }
     return out
     // `sets` is read through headSig: only the first row's exercise and equipment matter.
-  }, [data, index, exercises, equipment, bellExtras, headSig])
+  }, [data, index, workout?.startedAt, exercises, equipment, bellExtras, headSig])
 
   // Lifts that beat every earlier scored session today; only worked out while the
   // finish sheet is open, never stored. A light week awards no PRs.
   const prNames = useMemo(() => {
     const out = new Set<string>()
-    if (!finishing || !data || !index || lightWeekRunning(data.coach, sgIso())) return out
+    if (!finishing || !data || !index || !workout || lightWeekRunning(data.coach, workout.startedAt)) return out
     for (const id of new Set(sets.map((s) => s.exerciseId))) {
       const ex = exercises[id]
       const own = sets.filter((s) => s.exerciseId === id && s.completedAt)
@@ -103,7 +104,7 @@ export default function Workout({ workoutId, onDone }: Props) {
       if (isPr(ex, earlier, own)) out.add(ex.name)
     }
     return out
-  }, [finishing, data, index, sets, exercises])
+  }, [finishing, data, index, workout?.startedAt, sets, exercises])
 
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 1000)

@@ -23,19 +23,28 @@ export async function getOrCreateEquipment(ex: Exercise, outlet: Outlet): Promis
   return eq
 }
 
-// The rows of the latest workout whose latest completedAt is outside every light
-// week, or of the latest workout when all of them are inside one (a light week is
-// not evidence of anything, so it only counts when nothing earlier exists).
-// `done` holds completed rows for one key, from any workouts; sorted by seq.
-export function pickLastSession(done: SetRow[], lightWeeks: LightWeek[]): SetRow[] {
+// The rows of the latest workout (by startedAt) that started outside every light week,
+// or of the latest workout when all of them started inside one (a light week is not
+// evidence of anything, so it only counts when nothing earlier exists). A workout is
+// inside a light week by its startedAt, the same test sessionsFor uses, so the "Last"
+// line, the ghost rows and the nudge always agree. `done` holds completed rows for one
+// key, from any workouts; `startedAtOf` gives each workout's startedAt (a workout it
+// does not know falls back to its latest completedAt).
+export function pickLastSession(
+  done: SetRow[],
+  lightWeeks: LightWeek[],
+  startedAtOf: (workoutId: string) => string | undefined,
+): SetRow[] {
   if (done.length === 0) return []
-  const finished = new Map<string, string>()
+  const started = new Map<string, string>()
   for (const s of done) {
-    const at = finished.get(s.workoutId)
-    if (at === undefined || s.completedAt! > at) finished.set(s.workoutId, s.completedAt!)
+    const known = startedAtOf(s.workoutId)
+    const at = started.get(s.workoutId)
+    if (known !== undefined) started.set(s.workoutId, known)
+    else if (at === undefined || s.completedAt! > at) started.set(s.workoutId, s.completedAt!)
   }
   const latestOf = (ids: [string, string][]) => ids.reduce((a, b) => (a[1] > b[1] ? a : b))[0]
-  const all = [...finished]
+  const all = [...started]
   const normal = all.filter(([, at]) => !inLightWeek(at, lightWeeks))
   const workoutId = latestOf(normal.length > 0 ? normal : all)
   return done.filter((s) => s.workoutId === workoutId).sort((a, b) => a.seq - b.seq)
@@ -54,7 +63,10 @@ export async function lastSession(
       ? await db.sets.where('equipmentId').equals(equipmentId).toArray()
       : await db.sets.where('exerciseId').equals(ex.id).toArray()
   const done = candidates.filter((s) => s.completedAt && s.workoutId !== excludeWorkoutId)
-  return pickLastSession(done, lightWeeks)
+  const ids = [...new Set(done.map((s) => s.workoutId))]
+  const workouts = await db.workouts.bulkGet(ids)
+  const startedAt = new Map(workouts.filter((w) => w !== undefined).map((w) => [w.id, w.startedAt]))
+  return pickLastSession(done, lightWeeks, (id) => startedAt.get(id))
 }
 
 // Unit of the load field: centimetres for box height, kilograms otherwise.
