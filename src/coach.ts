@@ -22,24 +22,49 @@ export function inLightWeek(iso: string, lightWeeks: LightWeek[]): boolean {
   return lightWeeks.some((w) => w.startedAt <= iso && iso < w.endsAt)
 }
 
-// Finished strength workouts with at least one working set for the key, oldest first.
-export function sessionsFor(data: GymData, key: string): Session[] {
+// Every key's sessions in one pass over the sets: finished strength workouts with at
+// least one working set for the key, oldest first. Build it once and pass it to the
+// functions below that take an `index`, so a page of lifts does not rescan every set per key.
+export type SessionIndex = Map<string, Session[]>
+
+export function sessionIndex(data: GymData): SessionIndex {
   const exercises = new Map(data.exercises.map((e) => [e.id, e]))
-  const out: Session[] = []
+  const byWorkout = new Map<string, SetRow[]>()
+  for (const s of data.sets) {
+    if (!s.completedAt) continue
+    const list = byWorkout.get(s.workoutId)
+    if (list) list.push(s)
+    else byWorkout.set(s.workoutId, [s])
+  }
   const workouts = data.workouts
     .filter((w) => w.endedAt && w.type === 'strength')
     .sort((a, b) => a.startedAt.localeCompare(b.startedAt))
+  const out: SessionIndex = new Map()
   for (const workout of workouts) {
-    const rows = data.sets
-      .filter((s) => {
-        const ex = exercises.get(s.exerciseId)
-        return s.workoutId === workout.id && s.completedAt && ex && keyOf(ex, s) === key
-      })
-      .sort((a, b) => a.seq - b.seq)
-    if (!rows.some((r) => !r.isWarmup)) continue
-    out.push({ workout, rows, light: inLightWeek(workout.startedAt, data.coach.lightWeeks) })
+    const perKey = new Map<string, SetRow[]>()
+    for (const s of byWorkout.get(workout.id) ?? []) {
+      const ex = exercises.get(s.exerciseId)
+      if (!ex) continue
+      const key = keyOf(ex, s)
+      const list = perKey.get(key)
+      if (list) list.push(s)
+      else perKey.set(key, [s])
+    }
+    const light = inLightWeek(workout.startedAt, data.coach.lightWeeks)
+    for (const [key, rows] of perKey) {
+      if (!rows.some((r) => !r.isWarmup)) continue
+      rows.sort((a, b) => a.seq - b.seq)
+      const list = out.get(key)
+      if (list) list.push({ workout, rows, light })
+      else out.set(key, [{ workout, rows, light }])
+    }
   }
   return out
+}
+
+// Finished strength workouts with at least one working set for the key, oldest first.
+export function sessionsFor(data: GymData, key: string, index: SessionIndex = sessionIndex(data)): Session[] {
+  return [...(index.get(key) ?? [])]
 }
 
 // Reps, or seconds for timed lifts; 0 when missing.
@@ -334,18 +359,12 @@ export function daysLeft(lw: LightWeek, now: string): number {
 export type Lift = { key: string; ex: Exercise; sessions: Session[] }
 
 // Every lift key with a finished working session, with its sessions oldest first.
-function lifts(data: GymData): Lift[] {
+function lifts(data: GymData, index: SessionIndex = sessionIndex(data)): Lift[] {
   const exercises = new Map(data.exercises.map((e) => [e.id, e]))
-  const finished = new Set(data.workouts.filter((w) => w.endedAt && w.type === 'strength').map((w) => w.id))
-  const keys = new Map<string, Exercise>()
-  for (const row of data.sets) {
-    const ex = exercises.get(row.exerciseId)
-    if (ex && row.completedAt && finished.has(row.workoutId)) keys.set(keyOf(ex, row), ex)
-  }
   const out: Lift[] = []
-  for (const [key, ex] of keys) {
-    const sessions = sessionsFor(data, key)
-    if (sessions.length > 0) out.push({ key, ex, sessions })
+  for (const [key, sessions] of index) {
+    const ex = exercises.get(sessions[0].rows[0].exerciseId)
+    if (ex) out.push({ key, ex, sessions })
   }
   return out
 }
@@ -458,8 +477,8 @@ function prDetail(ex: Exercise, earlier: Session[], rows: SetRow[]): string {
 }
 
 // Light row, then stalls (latest session first), then this calendar week's PRs (newest first).
-export function coachRows(data: GymData, now: string): CoachRow[] {
-  const all = lifts(data)
+export function coachRows(data: GymData, now: string, index: SessionIndex = sessionIndex(data)): CoachRow[] {
+  const all = lifts(data, index)
   const rows: CoachRow[] = []
   const running = lightWeekRunning(data.coach, now)
   if (running) rows.push({ kind: 'light-running', daysLeft: daysLeft(running, now) })
@@ -516,8 +535,9 @@ export function history(
   ex: Exercise,
   key: string,
   limit = 12,
+  index: SessionIndex = sessionIndex(data),
 ): { points: HistoryPoint[]; best: HistoryPoint | null; stall: Stall | null } {
-  const all = sessionsFor(data, key)
+  const all = sessionsFor(data, key, index)
   const from = Math.max(0, all.length - limit)
   const points: HistoryPoint[] = all.slice(from).map((session, i) => ({
     session,

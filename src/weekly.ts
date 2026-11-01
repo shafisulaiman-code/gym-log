@@ -3,7 +3,7 @@
 // and what the app itself estimates or flags (e1RM, PRs, stalls, resets, light
 // weeks, hard sets): no averages and no suggested weights.
 import { isOverridden } from './cardio'
-import { coachRows, e1rm, isPr, keyOf, prFigures, score, sessionsFor } from './coach'
+import { coachRows, e1rm, isPr, keyOf, prFigures, score, sessionIndex, sessionsFor } from './coach'
 import { cardioModalities } from './db'
 import type { GymData } from './export'
 import { formatSession, ratingOf } from './history'
@@ -126,11 +126,12 @@ function estimateUp(ex: Exercise, earlier: { rows: SetRow[] }[], rows: SetRow[])
 // PRs, current stalls, resets and drops taken, and light weeks, in that order; null when none.
 function coach(ctx: Ctx): string | null {
   const lines: string[] = []
+  const index = sessionIndex(ctx.data)
 
   const prs: { at: string; line: string }[] = []
   for (const [key, sample] of weekKeys(ctx)) {
     const ex = ctx.exercises[sample.exerciseId]
-    const plain = sessionsFor(ctx.data, key).filter((s) => !s.light)
+    const plain = sessionsFor(ctx.data, key, index).filter((s) => !s.light)
     plain.forEach((s, i) => {
       if (!inWeek(s.workout.startedAt, ctx.week)) return
       const earlier = plain.slice(0, i)
@@ -142,7 +143,7 @@ function coach(ctx: Ctx): string | null {
   }
   lines.push(...prs.sort((a, b) => a.at.localeCompare(b.at)).map((p) => p.line))
 
-  for (const r of coachRows(ctx.data, ctx.generatedAt)) {
+  for (const r of coachRows(ctx.data, ctx.generatedAt, index)) {
     if (r.kind !== 'stall') continue
     const sample = ctx.data.sets.find((s) => ctx.exercises[s.exerciseId] && keyOf(ctx.exercises[s.exerciseId], s) === r.key)
     if (!sample) continue

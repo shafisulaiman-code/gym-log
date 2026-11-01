@@ -1,6 +1,7 @@
+import { useMemo } from 'react'
 import BottomSheet from '../components/BottomSheet'
 import Sparkline from '../components/Sparkline'
-import { history, sessionsFor } from '../coach'
+import { history, sessionIndex, sessionsFor } from '../coach'
 import type { GymData } from '../export'
 import { formatSession, ratingOf } from '../history'
 import { axisText, hasEstimate, historyStats } from '../historyView'
@@ -13,9 +14,15 @@ type Props = { data: GymData | null; ex: Exercise | null; keyId: string | null; 
 // One lift's last twelve sessions: three numbers, the e1RM line, then the sessions
 // newest first. Opens from the "Last" line on a workout card.
 export default function HistorySheet({ data, ex, keyId, onClose }: Props) {
-  if (!data || !ex || !keyId) return null
-  const { points, best, stall } = history(data, ex, keyId)
-  const total = sessionsFor(data, keyId).length
+  // The workout screen re-renders every second for its timer: work this out only when
+  // the lift or the data changes.
+  const computed = useMemo(() => {
+    if (!data || !ex || !keyId) return null
+    const index = sessionIndex(data)
+    return { ...history(data, ex, keyId, 12, index), total: sessionsFor(data, keyId, index).length }
+  }, [data, ex, keyId])
+  if (!data || !ex || !keyId || !computed) return null
+  const { points, best, stall, total } = computed
   const est = hasEstimate(points)
   const stats = historyStats(ex, points, best, total)
   const axis = axisText(points)

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { db } from '../db'
 import { EMPTY_COACH } from '../coachStore'
-import { isPr, keyOf, lightWeekRunning, sessionsFor, stallOf, suggestNext, type Suggestion } from '../coach'
+import { isPr, keyOf, lightWeekRunning, sessionIndex, sessionsFor, stallOf, suggestNext, type Suggestion } from '../coach'
 import { loadAll, type GymData } from '../export'
 import {
   countSets,
@@ -56,6 +56,9 @@ export default function Workout({ workoutId, onDone }: Props) {
   const coach = data?.coach ?? EMPTY_COACH
   const undoing = useRef(false) // a second tap on the taken line while the first undo is still running
 
+  // Every lift's sessions, indexed once per load: the nudges and the PR tags read from it.
+  const index = useMemo(() => (data ? sessionIndex(data) : null), [data])
+
   // Today's nudge per exercise. History does not change mid-workout, so this only
   // recomputes when the exercises, their equipment or the bell sizes change.
   const headSig = [...new Set(sets.map((s) => s.exerciseId))]
@@ -63,13 +66,13 @@ export default function Workout({ workoutId, onDone }: Props) {
     .join(',')
   const nudges = useMemo(() => {
     const out: Record<string, { suggestion: Suggestion; lastRows: SetRow[] }> = {}
-    if (!data) return out
+    if (!data || !index) return out
     const running = !!lightWeekRunning(data.coach, sgIso())
     for (const id of new Set(sets.map((s) => s.exerciseId))) {
       const ex = exercises[id]
       const first = sets.find((s) => s.exerciseId === id)
       if (!ex || !first) continue
-      const all = sessionsFor(data, keyOf(ex, first))
+      const all = sessionsFor(data, keyOf(ex, first), index)
       const sessions = all.filter((x) => !x.light)
       const suggestion = suggestNext({
         ex,
@@ -85,22 +88,22 @@ export default function Workout({ workoutId, onDone }: Props) {
     }
     return out
     // `sets` is read through headSig: only the first row's exercise and equipment matter.
-  }, [data, exercises, equipment, bellExtras, headSig])
+  }, [data, index, exercises, equipment, bellExtras, headSig])
 
   // Lifts that beat every earlier scored session today; only worked out while the
   // finish sheet is open, never stored. A light week awards no PRs.
   const prNames = useMemo(() => {
     const out = new Set<string>()
-    if (!finishing || !data || lightWeekRunning(data.coach, sgIso())) return out
+    if (!finishing || !data || !index || lightWeekRunning(data.coach, sgIso())) return out
     for (const id of new Set(sets.map((s) => s.exerciseId))) {
       const ex = exercises[id]
       const own = sets.filter((s) => s.exerciseId === id && s.completedAt)
       if (!ex || own.length === 0) continue
-      const earlier = sessionsFor(data, keyOf(ex, own[0])).filter((s) => !s.light)
+      const earlier = sessionsFor(data, keyOf(ex, own[0]), index).filter((s) => !s.light)
       if (isPr(ex, earlier, own)) out.add(ex.name)
     }
     return out
-  }, [finishing, data, sets, exercises])
+  }, [finishing, data, index, sets, exercises])
 
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 1000)

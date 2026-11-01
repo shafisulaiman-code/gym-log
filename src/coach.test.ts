@@ -19,6 +19,7 @@ import {
   prFigures,
   progressed,
   score,
+  sessionIndex,
   sessionsFor,
   stallOf,
   suggestNext,
@@ -238,6 +239,31 @@ describe('sessionsFor and formatTarget', () => {
     expect(out.map((s) => s.light)).toEqual([false, true, false])
     expect(out[0].rows).toHaveLength(2)
     expect(sessionsFor(data, 'ex:db-bench').map((s) => s.workout.id)).toEqual([other.workout.id])
+  })
+  it('indexes every key in one pass with the same sessions as sessionsFor', () => {
+    const a = mkSession('2026-10-10', [[100, 12], [100, 12]])
+    const b = mkSession('2026-10-17', [[60, 12, true]]) // warm-up only for the leg press
+    const bBench = mkSession('2026-10-17', [[20, 10], [20, 10]], undefined, { ex: dbBench, equipmentId: undefined })
+    bBench.rows.forEach((r) => (r.workoutId = b.workout.id))
+    const c = mkSession('2026-10-03', [[95, 12], [95, 12]])
+    const open = mkSession('2026-10-30', [[105, 10]])
+    delete open.workout.endedAt
+    const data = mkData([a, b, { workout: b.workout, rows: bBench.rows }, c, open], [legPress, dbBench], {
+      lightWeeks: [{ startedAt: '2026-10-09T00:00:00+08:00', endsAt: '2026-10-11T00:00:00+08:00' }],
+    })
+    data.workouts = data.workouts.filter((w, i, all) => all.findIndex((x) => x.id === w.id) === i)
+    const index = sessionIndex(data)
+    expect([...index.keys()].sort()).toEqual(['eq:eq1', 'ex:db-bench'])
+    for (const key of ['eq:eq1', 'ex:db-bench']) {
+      expect(index.get(key)).toEqual(sessionsFor(data, key))
+      expect(sessionsFor(data, key, index)).toEqual(sessionsFor(data, key))
+    }
+    expect(index.get('eq:eq1')!.map((s) => [s.workout.id, s.light])).toEqual([
+      [c.workout.id, false],
+      [a.workout.id, true],
+    ])
+    expect(index.get('ex:db-bench')!.map((s) => s.workout.id)).toEqual([b.workout.id])
+    expect(sessionsFor(data, 'ex:none', index)).toEqual([])
   })
   it('formats targets per load mode', () => {
     expect(formatTarget(legPress, 102.5, 10)).toBe('102.5 × 10')
