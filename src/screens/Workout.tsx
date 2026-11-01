@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { db } from '../db'
 import { EMPTY_COACH } from '../coachStore'
-import { isPr, keyOf, lightWeekRunning, sessionIndex, sessionsFor, stallOf, suggestNext, type Suggestion } from '../coach'
+import {
+  isPr,
+  keyOf,
+  lightWeekRunning,
+  sessionIndex,
+  sessionsFor,
+  stallOf,
+  suggestNext,
+  takenTarget,
+  type Suggestion,
+} from '../coach'
 import { loadAll, type GymData } from '../export'
 import {
   applyPlan,
@@ -330,7 +340,7 @@ export default function Workout({ workoutId, onDone }: Props) {
         const eq = rows[0].equipmentId ? equipment[rows[0].equipmentId] : undefined
         let working = 0
         // Hidden once any set of this exercise is ticked, and when no ghost row is left to rewrite.
-        const taken = rows.some((r) => r.ghost && r.coach)
+        const taken = takenTarget(ex, rows)
         const found = nudges[exId]
         const nudge =
           found &&
@@ -339,8 +349,11 @@ export default function Workout({ workoutId, onDone }: Props) {
             ? found
             : undefined
         const target = nudge?.suggestion
-        const onNudgeTap =
-          target && isTap(target) ? (taken ? () => undoSuggestion(exId) : () => applySuggestion(exId, target)) : undefined
+        const onNudgeTap = taken
+          ? () => undoSuggestion(exId)
+          : target && isTap(target)
+            ? () => applySuggestion(exId, target)
+            : undefined
         if (cardFolded(rows, pinnedOpen.includes(exId))) {
           const text = formatLast(ex, rows).replace(/^Last: /, '')
           return (

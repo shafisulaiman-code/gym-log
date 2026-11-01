@@ -23,6 +23,8 @@ import {
   sessionsFor,
   stallOf,
   suggestNext,
+  takenTarget,
+  takenText,
   workingWeight,
   type Session,
   type Stall,
@@ -459,6 +461,35 @@ describe('lineFor', () => {
 
 const flat = (d: string) => S([[100, 12], [100, 12], [100, 10]], 8, d)
 const NOW = '2026-11-01T10:00:00+08:00'
+
+describe('takenTarget and takenText', () => {
+  const ghost = (id: string, seq: number, over: Partial<SetRow>): SetRow => ({
+    id, workoutId: 'w1', exerciseId: legPress.id, equipmentId: 'eq1', setIndex: 0, isWarmup: false, weightKg: 100, reps: 12, seq, ghost: true, ...over,
+  })
+  it('reads the target back from the tagged ghost rows, not from a suggestion', () => {
+    const rows = [
+      ghost('w', 1, { isWarmup: true, weightKg: 60 }),
+      ghost('a', 2, { weightKg: 102.5, reps: 10, coach: 'up' }),
+      ghost('b', 3, { weightKg: 102.5, reps: 10, coach: 'up' }),
+    ]
+    const t = takenTarget(legPress, rows)!
+    expect(t).toEqual({ tag: 'up', w: 102.5, count: 10, sets: 2 })
+    // a step pill change from 2.5 to 5 would make the suggestion 105 x 10; the line keeps 102.5
+    expect(takenText(legPress, t)).toBe('102.5 × 10')
+    expect(takenTarget(legPress, [ghost('a', 1, {})])).toBeNull()
+  })
+  it('reads seconds for a plank with no weight and keeps the light sets suffix', () => {
+    const plankRow = ghost('p', 1, { exerciseId: plank.id, equipmentId: undefined, durationSec: 50, coach: 'reps' })
+    delete plankRow.weightKg
+    delete plankRow.reps
+    const t = takenTarget(plank, [plankRow])!
+    expect(t).toMatchObject({ w: 0, count: 50 })
+    expect(takenText(plank, t)).toBe('50s')
+    const bell = [ghost('a', 1, { exerciseId: swing.id, weightKg: 16, reps: 10, coach: 'light' }), ghost('b', 2, { exerciseId: swing.id, weightKg: 16, reps: 10, coach: 'light' })]
+    expect(takenText(swing, takenTarget(swing, bell)!)).toBe('16 × 10, two sets')
+    expect(takenText(legPress, takenTarget(legPress, [ghost('a', 1, { weightKg: 90, reps: 10, coach: 'light' })])!)).toBe('90 × 10')
+  })
+})
 
 describe('progressed and score', () => {
   it('counts a higher weight, more reps at the weight, or a higher estimate', () => {

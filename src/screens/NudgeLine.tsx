@@ -1,17 +1,30 @@
-import { formatTarget, lineFor, type Suggestion } from '../coach'
+import { lineFor, takenText, type Suggestion, type TakenTarget } from '../coach'
 import type { Exercise, SetRow } from '../types'
 
 type Props = {
   ex: Exercise
   suggestion: Suggestion
   lastRows: SetRow[]
-  taken: boolean // the ghost rows already carry this nudge; a tap undoes it
+  taken: TakenTarget | null // the nudge the ghost rows already carry; a tap undoes it
   onTap?: () => void
 }
 
 // One line under "Last": today's target. Tapping it rewrites the ghost rows; tapping
 // the taken line puts them back. Hold and text carry no tap and render a div.
 export default function NudgeLine({ ex, suggestion: s, lastRows, taken, onTap }: Props) {
+  if (taken) {
+    // Read back from the ghost rows, never recomputed: same copy as the offer, except the kicker.
+    return (
+      <button type="button" className="nudge taken" onClick={onTap} aria-label="Undo: back to last time's sets">
+        <span className="kicker">Trying</span>
+        <span>{takenText(ex, taken)}</span>
+        <span className="arrow" aria-hidden="true">
+          ✓
+        </span>
+      </button>
+    )
+  }
+
   const { kicker, text } = lineFor(ex, s, lastRows)
 
   if (s.state === 'hold') {
@@ -36,23 +49,6 @@ export default function NudgeLine({ ex, suggestion: s, lastRows, taken, onTap }:
         <span className="kicker">{kicker}</span>
         <span>{text}</span>
       </div>
-    )
-  }
-
-  if (taken) {
-    // Same copy as the offer, except the kicker; light keeps its ", two sets" suffix.
-    const suffix = s.state === 'light' ? text.slice(formatTarget(ex, s.w, s.count).length) : ''
-    return (
-      <button type="button" className="nudge taken" onClick={onTap} aria-label="Undo: back to last time's sets">
-        <span className="kicker">Trying</span>
-        <span>
-          {formatTarget(ex, s.w, s.count)}
-          {suffix}
-        </span>
-        <span className="arrow" aria-hidden="true">
-          ✓
-        </span>
-      </button>
     )
   }
 

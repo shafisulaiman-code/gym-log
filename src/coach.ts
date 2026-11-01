@@ -239,6 +239,25 @@ export function suggestNext(input: SuggestInput): Suggestion | null {
   return { state: 'reps', tag: 'reps', w, count: repsTarget, sets: n }
 }
 
+// The nudge he took, read back from the rows it wrote: the first tagged ghost working
+// row's load and count, and how many working rows carry the tag. The "Trying" line shows
+// this rather than a recomputed suggestion, so a step pill change afterwards cannot make
+// the line disagree with the ghost rows. null when no ghost row carries a tag.
+export type TakenTarget = { tag: CoachTag; w: number; count: number; sets: number }
+
+export function takenTarget(ex: Exercise, rows: SetRow[]): TakenTarget | null {
+  const first = rows.filter((r) => r.ghost && r.coach && !r.isWarmup).sort((a, b) => a.seq - b.seq)[0]
+  if (!first) return null
+  const sets = rows.filter((r) => r.coach && !r.isWarmup).length
+  return { tag: first.coach!, w: first.weightKg ?? 0, count: countOf(ex, first), sets }
+}
+
+// The "Trying" text: the target, and for a light week that halves the sets, ", two sets".
+export function takenText(ex: Exercise, t: TakenTarget): string {
+  if (t.tag !== 'light') return formatTarget(ex, t.w, t.count)
+  return lineFor(ex, { state: 'light', tag: 'light', w: t.w, count: t.count, sets: t.sets }, []).text
+}
+
 const SET_WORDS = ['', 'one', 'two', 'three', 'four']
 
 // The kicker and text of the nudge line.
