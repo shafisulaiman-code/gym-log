@@ -3,7 +3,7 @@
 // and what the app itself estimates or flags (e1RM, PRs, stalls, resets, light
 // weeks, hard sets): no averages and no suggested weights.
 import { isOverridden } from './cardio'
-import { coachRows, e1rm, isPr, keyOf, score, sessionsFor } from './coach'
+import { coachRows, e1rm, isPr, keyOf, prFigures, score, sessionsFor } from './coach'
 import { cardioModalities } from './db'
 import type { GymData } from './export'
 import { formatSession, ratingOf } from './history'
@@ -116,6 +116,13 @@ function bestSet(ex: Exercise, rows: SetRow[]): string {
   return now[0] > 0 ? `best set ${best} at ${fmt(now[0])}` : `best set ${best}`
 }
 
+// "e1RM ~78, up from 75": the new estimate carries "~" when rough, the old one stays plain.
+function estimateUp(ex: Exercise, earlier: { rows: SetRow[] }[], rows: SetRow[]): string {
+  const est = e1rm(ex, rows)!
+  const [now, prev] = prFigures(est.kg, Math.max(...earlier.map((x) => score(ex, x.rows)?.[0] ?? 0)))
+  return `e1RM ${est.rough ? '~' : ''}${now}, up from ${prev}`
+}
+
 // PRs, current stalls, resets and drops taken, and light weeks, in that order; null when none.
 function coach(ctx: Ctx): string | null {
   const lines: string[] = []
@@ -128,11 +135,8 @@ function coach(ctx: Ctx): string | null {
       if (!inWeek(s.workout.startedAt, ctx.week)) return
       const earlier = plain.slice(0, i)
       if (!isPr(ex, earlier, s.rows)) return
-      const now = score(ex, s.rows)!
       const detail =
-        ex.loadMode === 'bodyweight_plus' || ex.loadMode === 'timed'
-          ? bestSet(ex, s.rows)
-          : `e1RM ${Math.round(now[0])}, up from ${Math.round(Math.max(...earlier.map((x) => score(ex, x.rows)?.[0] ?? 0)))}`
+        ex.loadMode === 'bodyweight_plus' || ex.loadMode === 'timed' ? bestSet(ex, s.rows) : estimateUp(ex, earlier, s.rows)
       prs.push({ at: s.workout.startedAt, line: `- PR: ${keyLabel(ctx, key, sample)} · ${detail} · ${dayLabel(dateOf(s.workout.startedAt))}` })
     })
   }

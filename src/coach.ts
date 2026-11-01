@@ -436,6 +436,14 @@ function loadLabel(ex: Exercise, load: number): string {
   return fmt(load)
 }
 
+// A PR's new and previous estimates as whole kg, or with one decimal on both when the
+// whole numbers would tie ("133.4, up from 133.2" rather than "133, up from 133").
+export function prFigures(now: number, prev: number): [string, string] {
+  const a = Math.round(now)
+  const b = Math.round(prev)
+  return a !== b ? [String(a), String(b)] : [now.toFixed(1), prev.toFixed(1)]
+}
+
 function prDetail(ex: Exercise, earlier: Session[], rows: SetRow[]): string {
   const now = score(ex, rows)!
   if (ex.loadMode === 'bodyweight_plus' || ex.loadMode === 'timed') {
@@ -445,7 +453,8 @@ function prDetail(ex: Exercise, earlier: Session[], rows: SetRow[]): string {
       : `best set ${best}`
   }
   const prev = Math.max(...earlier.map((s) => score(ex, s.rows)?.[0] ?? 0))
-  return `e1RM ${Math.round(now[0])} kg, up from ${Math.round(prev)}`
+  const [a, b] = prFigures(now[0], prev)
+  return `e1RM ${a} kg, up from ${b}`
 }
 
 // Light row, then stalls (latest session first), then this calendar week's PRs (newest first).

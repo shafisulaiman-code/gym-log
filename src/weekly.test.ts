@@ -146,6 +146,17 @@ describe('weeklySummary', () => {
     const light = weeklySummary(fixture(), weekOf('2026-10-19'), GEN)
     expect(light).not.toContain('- PR:')
   })
+  it('marks a rough PR estimate with "~" on the new value only', () => {
+    const f = fixture()
+    f.sets = f.sets.map((s) => (s.workoutId === 'w26' && s.exerciseId === dbBench.id ? { ...s, weightKg: 24, reps: 12 } : s))
+    expect(weeklySummary(f, W44, GEN)).toContain('- PR: Dumbbell Bench Press · e1RM ~34, up from 33 · Mon 26 Oct')
+  })
+  it('shows one decimal on both PR estimates when the whole numbers tie', () => {
+    const f = fixture()
+    // 24.5 x 11 is 33.48 against 25 x 10 at 33.33: both round to 33
+    f.sets = f.sets.map((s) => (s.workoutId === 'w26' && s.exerciseId === dbBench.id ? { ...s, weightKg: 24.5, reps: 11 } : s))
+    expect(weeklySummary(f, W44, GEN)).toContain('- PR: Dumbbell Bench Press · e1RM ~33.5, up from 33.3 · Mon 26 Oct')
+  })
   it('words a PR for a bodyweight lift as its best set', () => {
     const f = fixture()
     const bw: Exercise = { ...dbBench, id: 'chin', name: 'Chin Up', loadMode: 'bodyweight_plus' }

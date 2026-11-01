@@ -16,6 +16,7 @@ import {
   lightWeekRunning,
   lineFor,
   nextLoad,
+  prFigures,
   progressed,
   score,
   sessionsFor,
@@ -699,6 +700,14 @@ describe('coachRows and history', () => {
     expect(prs.map((r) => (r as { key: string }).key)).toEqual(['ex:db-bench', 'eq:eq1'])
     expect(prs[0]).toMatchObject({ detail: 'e1RM 39 kg, up from 37' })
     expect(coachRows(data, '2026-11-09T10:00:00+08:00').filter((r) => r.kind === 'pr')).toHaveLength(0)
+  })
+  it('shows one decimal on both estimates when the whole numbers tie', () => {
+    const db = (d: string, w: number, reps: number) => mkSession(d, [[w, reps], [w, reps]], 8, { ex: dbBench })
+    // 25 x 12 is 35.0, 27 x 9 is 35.1: both round to 35
+    const data = mkData([db('2026-10-10', 24, 12), db('2026-10-17', 25, 12), db('2026-10-28', 27, 9)], [dbBench])
+    expect(coachRows(data, NOW).find((r) => r.kind === 'pr')).toMatchObject({ detail: 'e1RM 35.1 kg, up from 35.0' })
+    expect(prFigures(78.2, 75.4)).toEqual(['78', '75'])
+    expect(prFigures(133.4, 133.2)).toEqual(['133.4', '133.2'])
   })
   it('words PRs on lifts with no estimate as a best set', () => {
     const a = mkSession('2026-10-03', [[0, 12]], undefined, { ex: backExtension })
