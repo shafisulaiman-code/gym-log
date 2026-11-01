@@ -1,6 +1,6 @@
 import { inLightWeek } from './coach'
 import { db, kettlebellSizesKg } from './db'
-import type { Equipment, Exercise, LightWeek, Outlet, SetRow } from './types'
+import type { CoachTag, Equipment, Exercise, LightWeek, Outlet, SetRow } from './types'
 import { fmt, nextSeq, shortOutlet, uuid } from './util'
 
 // Machines and cables are tracked per physical machine (equipmentId), because the
@@ -118,6 +118,29 @@ export function prefillRows(
     row.reps = 10
   }
   return [row]
+}
+
+// Taking a nudge: every ghost working row of the exercise takes the target load and count
+// and the coach tag, and stays a ghost; real rows and warm-ups are never touched. A light
+// week with fewer sets drops the trailing ghost working rows. A row with no weight (a plank,
+// a jump rope) keeps none when the target load is 0, so it never reads "0 kg".
+// `mine` is every row of the exercise.
+export function applyPlan(
+  ex: Exercise,
+  mine: SetRow[],
+  target: { state: string; tag: CoachTag; w: number; count: number; sets: number },
+): { put: SetRow[]; remove: SetRow[] } {
+  const ghosts = mine.filter((r) => r.ghost && !r.isWarmup)
+  const keep = target.state === 'light' ? ghosts.slice(0, target.sets) : ghosts
+  const put = keep.map(
+    (r): SetRow => ({
+      ...r,
+      ...(r.weightKg === undefined && target.w === 0 ? {} : { weightKg: target.w }),
+      ...(ex.loadMode === 'timed' ? { durationSec: target.count } : { reps: target.count }),
+      coach: target.tag,
+    }),
+  )
+  return { put, remove: ghosts.slice(keep.length) }
 }
 
 // Undoing a nudge: warm-up rows are left alone; the ghost working rows go and last

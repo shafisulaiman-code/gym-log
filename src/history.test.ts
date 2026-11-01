@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { countSets, prefillRows, formatLast, formatSession, loadUnit, knownRows, ratingOf, pickLastSession, undoPlan } from './history'
+import { applyPlan, countSets, prefillRows, formatLast, formatSession, loadUnit, knownRows, ratingOf, pickLastSession, undoPlan } from './history'
 import type { Equipment, Exercise, LightWeek, SetRow } from './types'
 
 export const legPress: Exercise = {
@@ -284,5 +284,48 @@ describe('undoPlan', () => {
     const mine = [row('a', 5, { ghost: true, coach: 'light' }), row('b', 6, { ghost: true, coach: 'light' })]
     const { add } = undoPlan(mine, prefill)
     expect(add.map((r) => r.seq)).toEqual([5, 6, 7])
+  })
+})
+
+describe('applyPlan', () => {
+  const plank: Exercise = { ...legPress, id: 'bw-plank', name: 'Plank', equipmentType: 'bodyweight', loadMode: 'timed', defaultIncrementKg: 0, repRange: [30, 60] }
+  const row = (id: string, seq: number, over: Partial<SetRow>): SetRow => ({
+    id, workoutId: 'w1', exerciseId: 'm-leg-press', equipmentId: 'eq1', setIndex: 0, isWarmup: false, weightKg: 100, reps: 12, seq, ...over,
+  })
+
+  it('keeps a plank without a weight when the target load is 0', () => {
+    const mine = [0, 1].map((i) => {
+      const r = row(`p${i}`, i, { exerciseId: plank.id, equipmentId: undefined, ghost: true, durationSec: 45 })
+      delete r.weightKg
+      delete r.reps
+      return r
+    })
+    const { put, remove } = applyPlan(plank, mine, { state: 'reps', tag: 'reps', w: 0, count: 50, sets: 2 })
+    expect(remove).toEqual([])
+    expect(put.map((r) => [r.durationSec, r.coach, r.reps])).toEqual([[50, 'reps', undefined], [50, 'reps', undefined]])
+    expect(put.every((r) => !('weightKg' in r))).toBe(true)
+  })
+
+  it('writes the weight and reps on a leg press and leaves warm-ups and real rows alone', () => {
+    const mine = [
+      row('w', 1, { isWarmup: true, ghost: true, weightKg: 60 }),
+      row('real', 2, { reps: 11 }),
+      row('a', 3, { ghost: true }),
+      row('b', 4, { ghost: true }),
+    ]
+    const { put, remove } = applyPlan(legPress, mine, { state: 'up', tag: 'up', w: 102.5, count: 10, sets: 3 })
+    expect(remove).toEqual([])
+    expect(put.map((r) => [r.id, r.weightKg, r.reps, r.coach, r.ghost])).toEqual([
+      ['a', 102.5, 10, 'up', true],
+      ['b', 102.5, 10, 'up', true],
+    ])
+  })
+
+  it('writes a 0 target on a row that had a weight, and drops trailing ghosts in a light week', () => {
+    const mine = [row('a', 1, { ghost: true, weightKg: 10 }), row('b', 2, { ghost: true }), row('c', 3, { ghost: true })]
+    expect(applyPlan(legPress, mine, { state: 'reps', tag: 'reps', w: 0, count: 12, sets: 3 }).put[0].weightKg).toBe(0)
+    const { put, remove } = applyPlan(legPress, mine, { state: 'light', tag: 'light', w: 100, count: 10, sets: 2 })
+    expect(put.map((r) => r.id)).toEqual(['a', 'b'])
+    expect(remove.map((r) => r.id)).toEqual(['c'])
   })
 })

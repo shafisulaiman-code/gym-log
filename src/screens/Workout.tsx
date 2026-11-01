@@ -4,6 +4,7 @@ import { EMPTY_COACH } from '../coachStore'
 import { isPr, keyOf, lightWeekRunning, sessionIndex, sessionsFor, stallOf, suggestNext, type Suggestion } from '../coach'
 import { loadAll, type GymData } from '../export'
 import {
+  applyPlan,
   countSets,
   distinctWeights,
   formatLast,
@@ -230,21 +231,12 @@ export default function Workout({ workoutId, onDone }: Props) {
     db.sets.delete(last.id)
   }
 
-  // The nudge tap: every ghost working row takes the target and the coach tag, and stays a
-  // ghost. A light week with fewer sets drops the trailing ghost working rows.
+  // The nudge tap: the ghost working rows take the target (see applyPlan).
   function applySuggestion(exerciseId: string, s: Tappable) {
-    const timed = exercises[exerciseId]?.loadMode === 'timed'
-    const ghosts = sets.filter((r) => r.exerciseId === exerciseId && r.ghost && !r.isWarmup)
-    const keep = s.state === 'light' ? ghosts.slice(0, s.sets) : ghosts
-    const dropped = new Set(ghosts.slice(keep.length).map((r) => r.id))
-    const put = keep.map(
-      (r): SetRow => ({
-        ...r,
-        weightKg: s.w,
-        ...(timed ? { durationSec: s.count } : { reps: s.count }),
-        coach: s.tag,
-      }),
-    )
+    const ex = exercises[exerciseId]
+    if (!ex) return
+    const { put, remove } = applyPlan(ex, sets.filter((r) => r.exerciseId === exerciseId), s)
+    const dropped = new Set(remove.map((r) => r.id))
     const byId = new Map(put.map((r) => [r.id, r]))
     setSets((prev) => prev.filter((r) => !dropped.has(r.id)).map((r) => byId.get(r.id) ?? r))
     db.sets.bulkPut(put)
