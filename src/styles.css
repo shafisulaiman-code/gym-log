@@ -541,6 +541,74 @@ h3,
   padding: 0;
 }
 
+/* The nudge line: today's target, one line under "Last". */
+.nudge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% + 8px);
+  min-height: var(--tap);
+  margin: 8px -4px 2px;
+  padding: 0 12px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.nudge .kicker {
+  flex: none;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+  opacity: 0.8;
+}
+
+.nudge .arrow {
+  flex: none;
+  margin-left: auto;
+  font-size: 18px;
+}
+
+.nudge.offer,
+.nudge.light {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.nudge.taken {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.nudge.hold {
+  background: var(--raised);
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.nudge.hold b {
+  color: var(--text);
+  font-weight: 700;
+}
+
+.nudge.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.nudge.text {
+  width: 100%;
+  min-height: 40px;
+  margin-left: 0;
+  margin-right: 0;
+  padding-left: 0;
+  background: transparent;
+  color: var(--accent);
+}
+
 /* Set rows */
 .set-row {
   display: grid;
@@ -629,6 +697,21 @@ h3,
   background: transparent;
   outline: 1.5px dashed #3a3a42;
   outline-offset: -1.5px;
+}
+
+/* Ghost rows the nudge has rewritten: values in accent, dashed accent borders. */
+.set-row.ghost.coached {
+  opacity: 0.85;
+}
+
+.set-row.ghost.coached .stepper,
+.set-row.ghost.coached .chip.selected {
+  outline-color: var(--accent);
+}
+
+.set-row.ghost.coached .step-value span,
+.set-row.ghost.coached .chip.selected {
+  color: var(--accent);
 }
 
 .bell-chips {

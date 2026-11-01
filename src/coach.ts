@@ -226,7 +226,7 @@ export function lineFor(ex: Exercise, s: Suggestion, lastRows: SetRow[]): { kick
       const halves = ex.equipmentType === 'kettlebell' || ex.loadMode === 'per_hand' || isRepsOnly(ex, s.w)
       const sets = SET_WORDS[s.sets] || String(s.sets)
       const target = formatTarget(ex, s.w, s.count)
-      return { kicker: 'Light week', text: halves ? `${target}, ${sets} sets` : target }
+      return { kicker: 'Light week', text: halves ? `${target}, ${sets} ${s.sets === 1 ? 'set' : 'sets'}` : target }
     }
     case 'drop':
       return { kicker: 'Two short', text: `Try ${formatTarget(ex, s.w, s.count)}` }

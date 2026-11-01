@@ -403,6 +403,7 @@ describe('lineFor', () => {
     expect(lineFor(swing, t, [])).toEqual({ kicker: 'Top of the range', text: 'Try a bigger bell' })
     expect(lineFor(swing, { state: 'light', tag: 'light', w: 16, count: 10, sets: 2 }, [])).toEqual({ kicker: 'Light week', text: '16 × 10, two sets' })
     expect(lineFor(deadBug, { state: 'light', tag: 'light', w: 0, count: 8, sets: 6 }, [])).toEqual({ kicker: 'Light week', text: 'BW × 8, 6 sets' })
+    expect(lineFor(swing, { state: 'light', tag: 'light', w: 16, count: 10, sets: 1 }, [])).toEqual({ kicker: 'Light week', text: '16 × 10, one set' })
   })
 })
 

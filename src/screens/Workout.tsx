@@ -1,6 +1,8 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { db } from '../db'
-import { EMPTY_COACH, loadCoachState } from '../coachStore'
+import { EMPTY_COACH } from '../coachStore'
+import { keyOf, lightWeekRunning, sessionsFor, stallOf, suggestNext, type Suggestion } from '../coach'
+import { loadAll, type GymData } from '../export'
 import {
   countSets,
   distinctWeights,
@@ -13,12 +15,13 @@ import {
   prefillRows,
   weightStep,
 } from '../history'
-import type { CoachState, Equipment, Exercise, Outlet, SetRow, Workout as WorkoutT } from '../types'
+import type { CoachTag, Equipment, Exercise, Outlet, SetRow, Workout as WorkoutT } from '../types'
 import { nextSeq, sgIso, shortOutlet, uuid } from '../util'
 import Stepper from '../components/Stepper'
 import BellChips from '../components/BellChips'
 import StepPill from '../components/StepPill'
 import Thumb from '../components/Thumb'
+import NudgeLine from './NudgeLine'
 import Picker from './Picker'
 import FinishSheet from './FinishSheet'
 import TechniqueSheet from './TechniqueSheet'
@@ -28,13 +31,17 @@ import { cardFolded } from '../fold'
 
 type Props = { workoutId: string; onDone: () => void }
 
+// The suggestion states that carry a target and a tap (hold and text are plain lines).
+type Tappable = Extract<Suggestion, { tag: CoachTag }>
+
 export default function Workout({ workoutId, onDone }: Props) {
   const [workout, setWorkout] = useState<WorkoutT | null>(null)
   const [outlet, setOutlet] = useState<Outlet | null>(null)
   const [exercises, setExercises] = useState<Record<string, Exercise>>({})
   const [equipment, setEquipment] = useState<Record<string, Equipment>>({})
   const [sets, setSets] = useState<SetRow[]>([])
-  const [coach, setCoach] = useState<CoachState>(EMPTY_COACH)
+  // The raw tables, read once on load: the nudge lines and the light-week list come from it.
+  const [data, setData] = useState<GymData | null>(null)
   const [lastLines, setLastLines] = useState<Record<string, string>>({})
   const [bellExtras, setBellExtras] = useState<Record<string, number[]>>({})
   const [picking, setPicking] = useState(false)
@@ -43,6 +50,38 @@ export default function Workout({ workoutId, onDone }: Props) {
   const [now, setNow] = useState(Date.now())
   // Cards whose every set is ticked fold to one line; a tap pins one open.
   const [pinnedOpen, setPinnedOpen] = useState<string[]>([])
+  const coach = data?.coach ?? EMPTY_COACH
+
+  // Today's nudge per exercise. History does not change mid-workout, so this only
+  // recomputes when the exercises, their equipment or the bell sizes change.
+  const headSig = [...new Set(sets.map((s) => s.exerciseId))]
+    .map((id) => `${id}:${sets.find((s) => s.exerciseId === id)?.equipmentId ?? ''}`)
+    .join(',')
+  const nudges = useMemo(() => {
+    const out: Record<string, { suggestion: Suggestion; lastRows: SetRow[] }> = {}
+    if (!data) return out
+    const running = !!lightWeekRunning(data.coach, sgIso())
+    for (const id of new Set(sets.map((s) => s.exerciseId))) {
+      const ex = exercises[id]
+      const first = sets.find((s) => s.exerciseId === id)
+      if (!ex || !first) continue
+      const all = sessionsFor(data, keyOf(ex, first))
+      const sessions = all.filter((x) => !x.light)
+      const suggestion = suggestNext({
+        ex,
+        eq: first.equipmentId ? equipment[first.equipmentId] : undefined,
+        bells: bellExtras[id] ?? [],
+        sessions,
+        lightWeekRunning: running,
+        stall: stallOf(ex, all, data.coach.lightWeeks),
+      })
+      if (!suggestion) continue
+      const lastSess = sessions[sessions.length - 1] ?? all[all.length - 1]
+      out[id] = { suggestion, lastRows: lastSess?.rows ?? [] }
+    }
+    return out
+    // `sets` is read through headSig: only the first row's exercise and equipment matter.
+  }, [data, exercises, equipment, bellExtras, headSig])
 
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 1000)
@@ -67,12 +106,12 @@ export default function Workout({ workoutId, onDone }: Props) {
       onDone()
       return
     }
-    const [o, exList, eqList, rowsRaw, coachState] = await Promise.all([
+    const [o, exList, eqList, rowsRaw, all] = await Promise.all([
       db.outlets.get(w.outletId),
       db.exercises.toArray(),
       db.equipment.toArray(),
       db.sets.where('workoutId').equals(workoutId).toArray(),
-      loadCoachState(),
+      loadAll(),
     ])
     const exMap = Object.fromEntries(exList.map((e) => [e.id, e]))
     const rows = knownRows(rowsRaw, exMap).sort((a, b) => a.seq - b.seq)
@@ -82,12 +121,12 @@ export default function Workout({ workoutId, onDone }: Props) {
     for (const exId of new Set(rows.map((r) => r.exerciseId))) {
       const ex = exMap[exId]
       const eqId = rows.find((r) => r.exerciseId === exId)?.equipmentId
-      lines[exId] = formatLast(ex, await lastSession(ex, eqId, workoutId, coachState.lightWeeks))
+      lines[exId] = formatLast(ex, await lastSession(ex, eqId, workoutId, all.coach.lightWeeks))
       if (ex.equipmentType === 'kettlebell') extras[exId] = await distinctWeights(exId)
     }
 
     setWorkout(w)
-    setCoach(coachState)
+    setData(all)
     setOutlet(o ?? null)
     setExercises(exMap)
     setEquipment(Object.fromEntries(eqList.map((e) => [e.id, e])))
@@ -168,6 +207,47 @@ export default function Workout({ workoutId, onDone }: Props) {
     db.sets.delete(last.id)
   }
 
+  // The nudge tap: every ghost working row takes the target and the coach tag, and stays a
+  // ghost. A light week with fewer sets drops the trailing ghost working rows.
+  function applySuggestion(exerciseId: string, s: Tappable) {
+    const timed = exercises[exerciseId]?.loadMode === 'timed'
+    const ghosts = sets.filter((r) => r.exerciseId === exerciseId && r.ghost && !r.isWarmup)
+    const keep = s.state === 'light' ? ghosts.slice(0, s.sets) : ghosts
+    const dropped = new Set(ghosts.slice(keep.length).map((r) => r.id))
+    const put = keep.map(
+      (r): SetRow => ({
+        ...r,
+        weightKg: s.w,
+        ...(timed ? { durationSec: s.count } : { reps: s.count }),
+        coach: s.tag,
+      }),
+    )
+    const byId = new Map(put.map((r) => [r.id, r]))
+    setSets((prev) => prev.filter((r) => !dropped.has(r.id)).map((r) => byId.get(r.id) ?? r))
+    db.sets.bulkPut(put)
+    if (dropped.size > 0) db.sets.bulkDelete([...dropped])
+  }
+
+  // Back to last time's rows. The fresh rows reuse the old seq values so the card and its
+  // sets keep their place; rows the user already made real stay and count towards the plan.
+  async function undoSuggestion(exerciseId: string) {
+    const ex = exercises[exerciseId]
+    const mine = sets.filter((r) => r.exerciseId === exerciseId)
+    if (!ex || mine.length === 0) return
+    const ghosts = mine.filter((r) => r.ghost)
+    const eq = mine[0].equipmentId ? equipment[mine[0].equipmentId] : undefined
+    const last = await lastSession(ex, eq?.id, workoutId, coach.lightWeeks)
+    const real = mine.length - ghosts.length
+    let tail = Math.max(...mine.map((r) => r.seq))
+    const fresh = prefillRows(ex, eq, workoutId, last)
+      .slice(real)
+      .map((r, i) => ({ ...r, seq: ghosts[i]?.seq ?? ++tail }))
+    const gone = new Set(ghosts.map((r) => r.id))
+    setSets((prev) => [...prev.filter((r) => !gone.has(r.id)), ...fresh].sort((a, b) => a.seq - b.seq))
+    await db.sets.bulkDelete([...gone])
+    await db.sets.bulkAdd(fresh)
+  }
+
   function setStep(eq: Equipment, stackStepKg: number) {
     const next = { ...eq, stackStepKg }
     setEquipment((prev) => ({ ...prev, [eq.id]: next }))
@@ -230,6 +310,18 @@ export default function Workout({ workoutId, onDone }: Props) {
         const rows = sets.filter((s) => s.exerciseId === exId)
         const eq = rows[0].equipmentId ? equipment[rows[0].equipmentId] : undefined
         let working = 0
+        // Hidden once any set of this exercise is ticked, and when no ghost row is left to rewrite.
+        const taken = rows.some((r) => r.ghost && r.coach)
+        const found = nudges[exId]
+        const nudge =
+          found &&
+          !rows.some((r) => r.completedAt) &&
+          (!isTap(found.suggestion) || taken || rows.some((r) => r.ghost && !r.isWarmup))
+            ? found
+            : undefined
+        const target = nudge?.suggestion
+        const onNudgeTap =
+          target && isTap(target) ? (taken ? () => undoSuggestion(exId) : () => applySuggestion(exId, target)) : undefined
         if (cardFolded(rows, pinnedOpen.includes(exId))) {
           const text = formatLast(ex, rows).replace(/^Last: /, '')
           return (
@@ -264,6 +356,15 @@ export default function Workout({ workoutId, onDone }: Props) {
                 <StepPill value={weightStep(ex, eq)} onChange={(kg) => setStep(eq, kg)} />
               )}
             </div>
+            {nudge && (
+              <NudgeLine
+                ex={ex}
+                suggestion={nudge.suggestion}
+                lastRows={nudge.lastRows}
+                taken={taken}
+                onTap={onNudgeTap}
+              />
+            )}
             {ex.note && <div className="ex-note">{ex.note}</div>}
             {rows.map((row) => (
               <SetRowView
@@ -569,7 +670,13 @@ function SetRowView({
     }
   }
 
-  const cls = ['set-row', done ? 'done' : '', row.isWarmup ? 'warmup' : '', row.ghost ? 'ghost' : '']
+  const cls = [
+    'set-row',
+    done ? 'done' : '',
+    row.isWarmup ? 'warmup' : '',
+    row.ghost ? 'ghost' : '',
+    row.ghost && row.coach ? 'coached' : '',
+  ]
   return (
     <div className={cls.join(' ').trim()}>
       <button
@@ -624,6 +731,10 @@ function SetRowView({
       </button>
     </div>
   )
+}
+
+function isTap(s: Suggestion): s is Tappable {
+  return s.state !== 'hold' && s.state !== 'text'
 }
 
 function elapsed(startedAt: string, now: number): string {
