@@ -7,11 +7,12 @@ type Props = {
   onClose: () => void
   rows: SetRow[]
   exercises: Record<string, Exercise>
+  prNames: Set<string>
   startedAt: string
   onFinish: () => void
 }
 
-export default function FinishSheet({ open, onClose, rows, exercises, startedAt, onFinish }: Props) {
+export default function FinishSheet({ open, onClose, rows, exercises, prNames, startedAt, onFinish }: Props) {
   if (!open) return null
   const s = summarize(rows, exercises)
   const sec = Math.max(0, Math.floor((Date.now() - new Date(startedAt).getTime()) / 1000))
@@ -42,7 +43,10 @@ export default function FinishSheet({ open, onClose, rows, exercises, startedAt,
         <div className="summary-lines">
           {s.lines.map((l) => (
             <div className="li" key={l.name}>
-              <b>{l.name}</b>
+              <b>
+                {l.name}
+                {prNames.has(l.name) && <i className="tag-pr">PR</i>}
+              </b>
               <span>{l.text}</span>
             </div>
           ))}

@@ -89,6 +89,7 @@ Rules:
 
 - **Phase 2 (gym-ready)**: rest timer auto-start on ✓ with vibration + wake lock; RIR chips (0-1 / 2-3 / 4+) after the last working set; pain flag chip (back / knee); supersets (pair two exercises, alternate set rows); timed circuits for kettlebell days (rounds × exercises, round timer); richer "Last time" line with RIR; weekly summary Markdown generator and export.
 - **Phase 3 (coaching rules)**: `suggestNext()` double progression with RIR gate (add weight only when every working set hits the top of the rep range at RIR ≥ 1; hold if at RIR 0; drop one step after two sessions below the bottom); stall detection (3 sessions no progress); deload prompt (2 stalls in a week, or e1RM down >5% twice, or 6 weeks without a light week); Epley e1RM for 1-10 rep sets only; PR flags; e1RM sparkline per lift; weekly hard sets per muscle group.
+  Built 1 Nov 2026: see docs/superpowers/specs/2026-11-01-phase3-design.md and docs/superpowers/plans/2026-11-01-phase3.md.
 - **Phase 4 (auto-sync)**: Google Apps Script `doPost` endpoint that appends rows to a Sheet (tabs: sets, cardio, bodyweight) and rewrites a Weekly Summary Doc; sync queue with retry on `online` event and app open; Sheet and Doc added to the claude.ai Project.
 
 ## Do not build

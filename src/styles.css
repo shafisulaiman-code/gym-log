@@ -990,6 +990,22 @@ h3,
   font-weight: 700;
 }
 
+.summary-lines .li .tag-pr {
+  display: inline-block;
+  margin-left: 8px;
+  font-style: normal;
+  font-size: 11px;
+  line-height: 16px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  vertical-align: 1px;
+}
+
 .summary-lines .li span {
   color: var(--muted);
   font-variant-numeric: tabular-nums;

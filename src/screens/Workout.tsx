@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { db } from '../db'
 import { EMPTY_COACH } from '../coachStore'
-import { keyOf, lightWeekRunning, sessionsFor, stallOf, suggestNext, type Suggestion } from '../coach'
+import { isPr, keyOf, lightWeekRunning, sessionsFor, stallOf, suggestNext, type Suggestion } from '../coach'
 import { loadAll, type GymData } from '../export'
 import {
   countSets,
@@ -86,6 +86,21 @@ export default function Workout({ workoutId, onDone }: Props) {
     return out
     // `sets` is read through headSig: only the first row's exercise and equipment matter.
   }, [data, exercises, equipment, bellExtras, headSig])
+
+  // Lifts that beat every earlier scored session today; only worked out while the
+  // finish sheet is open, never stored. A light week awards no PRs.
+  const prNames = useMemo(() => {
+    const out = new Set<string>()
+    if (!finishing || !data || lightWeekRunning(data.coach, sgIso())) return out
+    for (const id of new Set(sets.map((s) => s.exerciseId))) {
+      const ex = exercises[id]
+      const own = sets.filter((s) => s.exerciseId === id && s.completedAt)
+      if (!ex || own.length === 0) continue
+      const earlier = sessionsFor(data, keyOf(ex, own[0])).filter((s) => !s.light)
+      if (isPr(ex, earlier, own)) out.add(ex.name)
+    }
+    return out
+  }, [finishing, data, sets, exercises])
 
   useEffect(() => {
     const t = window.setInterval(() => setNow(Date.now()), 1000)
@@ -444,6 +459,7 @@ export default function Workout({ workoutId, onDone }: Props) {
         onClose={() => setFinishing(false)}
         rows={sets}
         exercises={exercises}
+        prNames={prNames}
         startedAt={workout.startedAt}
         onFinish={finish}
       />
