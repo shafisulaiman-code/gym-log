@@ -182,10 +182,11 @@ export function suggestNext(input: SuggestInput): Suggestion | null {
     return { state: 'drop', tag: 'drop', w: down, count: lo, sets: n }
   }
 
-  // The reps target: one more than the fewest, never below the middle count; five more seconds than the shortest for timed.
+  // The reps target: one more than the fewest (five more seconds for timed), never below
+  // the middle count, capped at the top of the range.
   const sorted = [...counts].sort((a, b) => a - b)
   const median = sorted[Math.floor((sorted.length - 1) / 2)]
-  const repsTarget = Math.min(hi, timed ? sorted[0] + 5 : Math.max(sorted[0] + 1, median))
+  const repsTarget = Math.min(hi, Math.max(sorted[0] + (timed ? 5 : 1), median))
 
   if (stall) {
     const kicker = `Stalled ${stall.sessions} sessions`

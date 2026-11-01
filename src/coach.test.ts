@@ -358,6 +358,10 @@ describe('suggestNext', () => {
     expect(
       suggestNext({ ...base, ex: carry, sessions: [toSession(mkSession('2026-10-31', [[24, 45], [24, 40]], 8, { durationSec: true }))] }),
     ).toMatchObject({ state: 'reps', w: 24, count: 45 })
+    // never below the middle count: 45, 60, 60 gives 60, not 50
+    expect(
+      suggestNext({ ...base, ex: carry, sessions: [toSession(mkSession('2026-10-31', [[24, 45], [24, 60], [24, 60]], 8, { durationSec: true }))] }),
+    ).toMatchObject({ state: 'reps', w: 24, count: 60 })
     expect(
       suggestNext({ ...base, ex: carry, sessions: [toSession(mkSession('2026-10-31', [[24, 60], [24, 60]], 8, { durationSec: true }))] }),
     ).toMatchObject({ state: 'up', w: 28, count: 30 })
