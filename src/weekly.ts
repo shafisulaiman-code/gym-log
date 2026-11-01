@@ -2,9 +2,10 @@
 // function over the raw tables (no database access). It states what happened
 // and nothing more: no verdicts, averages, e1RM or suggestions.
 import { isOverridden } from './cardio'
+import { keyOf } from './coach'
 import { cardioModalities } from './db'
 import type { GymData } from './export'
-import { formatSession, keyedByEquipment, ratingOf } from './history'
+import { formatSession, ratingOf } from './history'
 import { CHIPS, chipsFor } from './muscles'
 import { CARDIO_LABELS } from './sessionDetail'
 import { volumeKg } from './summary'
@@ -74,12 +75,6 @@ function sessions(ctx: Ctx): string {
     }
   }
   return lines.join('\n')
-}
-
-// Machines and cables are keyed per physical machine, so the same machine at two
-// outlets never mixes; everything else by exercise.
-function keyOf(ex: Exercise, s: SetRow): string {
-  return keyedByEquipment(ex) && s.equipmentId ? `eq:${s.equipmentId}` : `ex:${ex.id}`
 }
 
 // Completed working rows with a known exercise from finished workouts in the week.
