@@ -264,12 +264,20 @@ export function progressed(ex: Exercise, a: Session, b: Session): boolean {
   return ea !== null && eb !== null && eb.kg > ea.kg
 }
 
+// Sessions outside light weeks, and none from before the latest light week began: a
+// light week restarts the stall and drop counts.
+function freshSessions(sessions: Session[], lightWeeks: LightWeek[]): Session[] {
+  const since = lightWeeks.map((w) => w.startedAt).sort().pop()
+  return sessions.filter((s) => !s.light && (since === undefined || s.workout.startedAt >= since))
+}
+
 // A lift with three or more sessions in a row without progress. Light sessions are
-// dropped and the count starts again at the latest session tagged 'reset' (that
-// session is session 1). `sessions` is the length of the trailing no-progress run
+// dropped, the count starts again after a light week and at the latest session tagged
+// 'reset' (that session is session 1). `sessions` is the length of the trailing no-progress run
 // plus one; `reps` is the median count at the working weight of the latest session.
-export function stallOf(ex: Exercise, sessions: Session[]): Stall | null {
-  let list = sessions.filter((s) => !s.light)
+export function stallOf(ex: Exercise, sessions: Session[], lightWeeks: LightWeek[] = []): Stall | null {
+  if (ex.loadMode === 'height_cm') return null
+  let list = freshSessions(sessions, lightWeeks)
   const reset = list.map((s) => s.rows.some((r) => r.coach === 'reset')).lastIndexOf(true)
   if (reset > 0) list = list.slice(reset)
   if (list.length < 3) return null
@@ -321,7 +329,7 @@ export function daysLeft(lw: LightWeek, now: string): number {
   return Math.max(0, Math.ceil((Date.parse(lw.endsAt) - Date.parse(now)) / DAY_MS))
 }
 
-type Lift = { key: string; ex: Exercise; sessions: Session[] }
+export type Lift = { key: string; ex: Exercise; sessions: Session[] }
 
 // Every lift key with a finished working session, with its sessions oldest first.
 function lifts(data: GymData): Lift[] {
@@ -344,20 +352,31 @@ const latestOf = (l: Lift) => l.sessions[l.sessions.length - 1].workout.startedA
 
 type StalledLift = Lift & { stall: Stall }
 
-// Stalled lifts whose latest session is within the last 28 days, latest session first.
-function recentStalls(data: GymData, now: string): StalledLift[] {
+// Light weeks that have begun by `now`.
+function begun(data: GymData, now: string): LightWeek[] {
+  return data.coach.lightWeeks.filter((w) => Date.parse(w.startedAt) <= Date.parse(now))
+}
+
+// Lifts whose latest session is within the last 28 days.
+function recentLifts(all: Lift[], now: string): Lift[] {
+  return all.filter((l) => daysBetween(dateOf(latestOf(l)), dateOf(now)) <= RECENT_DAYS)
+}
+
+// Stalled recent lifts, latest session first.
+function recentStalls(data: GymData, now: string, all: Lift[]): StalledLift[] {
+  const weeks = begun(data, now)
   const out: StalledLift[] = []
-  for (const l of lifts(data)) {
-    if (daysBetween(dateOf(latestOf(l)), dateOf(now)) > RECENT_DAYS) continue
-    const stall = stallOf(l.ex, l.sessions)
+  for (const l of recentLifts(all, now)) {
+    const stall = stallOf(l.ex, l.sessions, weeks)
     if (stall) out.push({ ...l, stall })
   }
   return out.sort((a, b) => latestOf(b).localeCompare(latestOf(a)))
 }
 
-// Two transitions among the last four sessions where the estimate fell by more than 5 percent.
-function hasDrops(l: Lift): boolean {
-  const last = l.sessions.filter((s) => !s.light).slice(-4)
+// Two transitions among the last four sessions (after the latest light week began)
+// where the estimate fell by more than 5 percent.
+function hasDrops(l: Lift, lightWeeks: LightWeek[]): boolean {
+  const last = freshSessions(l.sessions, lightWeeks).slice(-4)
   let drops = 0
   for (let i = 1; i < last.length; i++) {
     const a = e1rm(l.ex, last[i - 1].rows)
@@ -368,12 +387,17 @@ function hasDrops(l: Lift): boolean {
 }
 
 // Why a light week is due, checked in this order; null while one runs or is snoozed.
-export function lightWeekDue(data: GymData, now: string): 'stalls' | 'drops' | 'time' | null {
+export function lightWeekDue(
+  data: GymData,
+  now: string,
+  all: Lift[] = lifts(data), // precomputed by callers that already built them
+): 'stalls' | 'drops' | 'time' | null {
   const { coach } = data
   if (lightWeekRunning(coach, now)) return null
   if (coach.lightWeekSnoozedUntil && Date.parse(coach.lightWeekSnoozedUntil) > Date.parse(now)) return null
-  if (recentStalls(data, now).length >= 2) return 'stalls'
-  if (lifts(data).some(hasDrops)) return 'drops'
+  if (recentStalls(data, now, all).length >= 2) return 'stalls'
+  const weeks = begun(data, now)
+  if (recentLifts(all, now).some((l) => hasDrops(l, weeks))) return 'drops'
   const lastEnd = coach.lightWeeks.map((w) => w.endsAt).sort().pop()
   const first = data.workouts
     .filter((w) => w.endedAt && w.type === 'strength')
@@ -424,15 +448,16 @@ function prDetail(ex: Exercise, earlier: Session[], rows: SetRow[]): string {
 
 // Light row, then stalls (latest session first), then this calendar week's PRs (newest first).
 export function coachRows(data: GymData, now: string): CoachRow[] {
+  const all = lifts(data)
   const rows: CoachRow[] = []
   const running = lightWeekRunning(data.coach, now)
   if (running) rows.push({ kind: 'light-running', daysLeft: daysLeft(running, now) })
   else {
-    const reason = lightWeekDue(data, now)
+    const reason = lightWeekDue(data, now, all)
     if (reason) rows.push({ kind: 'light-due', reason })
   }
 
-  for (const l of recentStalls(data, now)) {
+  for (const l of recentStalls(data, now, all)) {
     rows.push({
       kind: 'stall',
       key: l.key,
@@ -444,7 +469,7 @@ export function coachRows(data: GymData, now: string): CoachRow[] {
 
   const week = weekOf(now)
   const prs: { at: string; row: CoachRow }[] = []
-  for (const l of lifts(data)) {
+  for (const l of all) {
     const plain = l.sessions.filter((s) => !s.light)
     plain.forEach((s, i) => {
       if (!inWeek(s.workout.startedAt, week)) return
@@ -464,7 +489,10 @@ export function coachRows(data: GymData, now: string): CoachRow[] {
     })
   }
   prs.sort((a, b) => b.at.localeCompare(a.at))
-  return [...rows, ...prs.map((p) => p.row)]
+  // One row per lift: its newest PR this week.
+  const seen = new Set<string>()
+  const newest = prs.filter((p) => p.row.kind === 'pr' && !seen.has(p.row.key) && seen.add(p.row.key))
+  return [...rows, ...newest.map((p) => p.row)]
 }
 
 export type HistoryPoint = { session: Session; e1rm: { kg: number; rough: boolean } | null; pr: boolean }
@@ -500,5 +528,5 @@ export function history(
       bestScore = sc
     }
   }
-  return { points, best, stall: stallOf(ex, all) }
+  return { points, best, stall: stallOf(ex, all, data.coach.lightWeeks) }
 }

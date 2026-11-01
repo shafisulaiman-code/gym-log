@@ -476,6 +476,20 @@ describe('stallOf', () => {
     const drop = mkSession('2026-10-24', [[100, 10], [100, 10], [100, 10]], 8, { coach: 'drop' })
     expect(stallOf(legPress, [flat('2026-10-03'), flat('2026-10-10'), flat('2026-10-17'), drop].map(toSession))!.sessions).toBe(4)
   })
+  it('never stalls a box height', () => {
+    const jump = (d: string) => mkSession(d, [[50, 5], [50, 5], [50, 5]], 8, { ex: boxJump })
+    expect(stallOf(boxJump, [jump('2026-10-10'), jump('2026-10-17'), jump('2026-10-24')].map(toSession))).toBeNull()
+  })
+  it('restarts after a light week: three fresh sessions are needed', () => {
+    const lw = [{ startedAt: '2026-10-20T00:00:00+08:00', endsAt: '2026-10-27T00:00:00+08:00' }]
+    const before = [flat('2026-10-03'), flat('2026-10-10'), flat('2026-10-17')]
+    expect(stallOf(legPress, before.map(toSession))!.sessions).toBe(3)
+    expect(stallOf(legPress, before.map(toSession), lw)).toBeNull()
+    const light = { ...toSession(flat('2026-10-22')), light: true }
+    const two = [...before.map(toSession), light, toSession(flat('2026-10-28')), toSession(flat('2026-11-04'))]
+    expect(stallOf(legPress, two, lw)).toBeNull()
+    expect(stallOf(legPress, [...two, toSession(flat('2026-11-11'))], lw)).toEqual({ sessions: 3, w: 100, reps: 12 })
+  })
   it('ignores light sessions', () => {
     const light = { ...toSession(flat('2026-10-17')), light: true }
     expect(stallOf(legPress, [toSession(flat('2026-10-03')), toSession(flat('2026-10-10')), light])).toBeNull()
@@ -565,6 +579,30 @@ describe('lightWeekDue, lightWeekRunning, daysLeft', () => {
     const exact = mkData([s(100, '2026-10-03'), s(96, '2026-10-10'), s(100, '2026-10-17'), s(96, '2026-10-24')], [legPress])
     expect(lightWeekDue(exact, NOW)).toBeNull()
   })
+  it('ignores drops on lifts last trained more than 28 days ago', () => {
+    const s = (w: number, d: string) => S([[w, 12], [w, 12], [w, 12]], 8, d)
+    const old = mkData(
+      [s(100, '2026-09-01'), s(100, '2026-09-08'), s(94, '2026-09-15'), s(100, '2026-09-22'), s(94, '2026-09-29')],
+      [legPress],
+    )
+    expect(lightWeekDue(old, NOW)).toBe('time') // latest session 33 days back; only the time trigger is left
+    expect(lightWeekDue(old, '2026-10-20T10:00:00+08:00')).toBe('drops') // 21 days back
+  })
+  it('does not re-trigger stalls or drops from before a light week when it ends', () => {
+    const ends = '2026-11-08T00:00:00+08:00'
+    const lw = { startedAt: '2026-11-01T00:00:00+08:00', endsAt: ends }
+    const stalled = twoStalls()
+    expect(lightWeekDue(stalled, '2026-11-01T00:00:00+08:00')).toBe('stalls')
+    expect(lightWeekDue({ ...stalled, coach: { lightWeeks: [lw] } }, ends)).toBeNull()
+    expect(coachRows({ ...stalled, coach: { lightWeeks: [lw] } }, ends)).toEqual([])
+    const s = (w: number, d: string) => S([[w, 12], [w, 12], [w, 12]], 8, d)
+    const drops = mkData(
+      [s(100, '2026-10-03'), s(100, '2026-10-10'), s(94, '2026-10-17'), s(100, '2026-10-24'), s(94, '2026-10-31')],
+      [legPress],
+    )
+    expect(lightWeekDue(drops, ends)).toBe('drops')
+    expect(lightWeekDue({ ...drops, coach: { lightWeeks: [lw] } }, ends)).toBeNull()
+  })
   it('checks stalls before drops before time', () => {
     const both = twoStalls()
     both.workouts.push(flat('2026-08-01').workout) // an old first workout makes time due as well
@@ -624,12 +662,19 @@ describe('coachRows and history', () => {
       date: '2026-10-28',
     })
   })
-  it('shows a running light week first, with the days left, and no PR from light sessions', () => {
+  it('shows a running light week first, with the days left, no stall rows and no PR from light sessions', () => {
     const data = build()
     data.coach = { lightWeeks: [{ startedAt: '2026-10-27T00:00:00+08:00', endsAt: '2026-11-06T09:00:00+08:00' }] }
     const rows = coachRows(data, NOW)
     expect(rows[0]).toEqual({ kind: 'light-running', daysLeft: 5 })
-    expect(rows.map((r) => r.kind)).toEqual(['light-running', 'stall']) // the 28 Oct bench session is light, so no PR
+    // the 28 Oct bench session is light, so no PR; the light week restarts the Leg Press stall
+    expect(rows.map((r) => r.kind)).toEqual(['light-running'])
+  })
+  it('shows no row for a box jump however flat it is', () => {
+    const jump = (d: string) => mkSession(d, [[50, 5], [50, 5], [50, 5]], 8, { ex: boxJump })
+    const data = mkData([jump('2026-10-10'), jump('2026-10-17'), jump('2026-10-24')], [boxJump])
+    expect(coachRows(data, '2026-10-28T10:00:00+08:00')).toEqual([])
+    expect(history(data, boxJump, 'ex:plyo-box-jump').stall).toBeNull()
   })
   it('forgets stalls older than 28 days', () => {
     const data = mkData([flat('2026-09-19'), flat('2026-09-26'), flat('2026-10-03')], [legPress])
@@ -643,7 +688,9 @@ describe('coachRows and history', () => {
       [legPress, dbBench],
     )
     const prs = coachRows(data, NOW).filter((r) => r.kind === 'pr')
-    expect(prs.map((r) => (r as { date: string }).date)).toEqual(['2026-10-30', '2026-10-29', '2026-10-27'])
+    // the bench PRs on 27 and 30 Oct: one row, the newer
+    expect(prs.map((r) => (r as { date: string }).date)).toEqual(['2026-10-30', '2026-10-29'])
+    expect(prs.map((r) => (r as { key: string }).key)).toEqual(['ex:db-bench', 'eq:eq1'])
     expect(prs[0]).toMatchObject({ detail: 'e1RM 39 kg, up from 37' })
     expect(coachRows(data, '2026-11-09T10:00:00+08:00').filter((r) => r.kind === 'pr')).toHaveLength(0)
   })
