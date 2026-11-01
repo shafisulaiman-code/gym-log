@@ -7,13 +7,17 @@ import {
   isRepsOnly,
   keyOf,
   lightLoad,
+  lineFor,
   nextLoad,
   sessionsFor,
+  suggestNext,
   workingWeight,
   type Session,
+  type Stall,
+  type Suggestion,
 } from './coach'
 import type { GymData } from './export'
-import { eq, legPress } from './history.test'
+import { boxJump, eq, legPress } from './history.test'
 import type { CoachState, CoachTag, Exercise, SetRow, Workout } from './types'
 
 export const swing: Exercise = {
@@ -231,5 +235,163 @@ describe('sessionsFor and formatTarget', () => {
     expect(formatTarget(backExtension, 0, 12)).toBe('BW × 12')
     expect(formatTarget(carry, 24, 45)).toBe('24 × 45s')
     expect(formatTarget(plank, 0, 60)).toBe('60s')
+  })
+})
+
+const S = (sets: [number, number, boolean?][], rpe?: number, date = '2026-10-31') => mkSession(date, sets, rpe)
+const sug = (
+  sessions: { workout: Workout; rows: SetRow[] }[],
+  extra: { stall?: Stall | null; lightWeekRunning?: boolean } = {},
+) =>
+  suggestNext({
+    ex: legPress,
+    eq,
+    bells: [],
+    sessions: sessions.map(toSession),
+    lightWeekRunning: false,
+    stall: null,
+    ...extra,
+  })
+
+describe('suggestNext', () => {
+  it('offers reps: min plus one, never below the median', () => {
+    expect(sug([S([[100, 12], [100, 12], [100, 10]], 8)])).toMatchObject({ state: 'reps', w: 100, count: 12, sets: 3 })
+    expect(sug([S([[100, 12], [100, 12], [100, 12]], 8)])).toMatchObject({ state: 'reps', w: 100, count: 13 })
+    expect(sug([S([[100, 12], [100, 11], [100, 10]], 9)])).toMatchObject({ state: 'reps', count: 11 })
+    expect(sug([S([[100, 15], [100, 15], [100, 14]], 9)])).toMatchObject({ state: 'reps', count: 15 })
+  })
+  it('offers one step up at the top of the range at effort 9 or below', () => {
+    expect(sug([S([[100, 15], [100, 15], [100, 15]], 9)])).toMatchObject({ state: 'up', w: 102.5, count: 10, tag: 'up' })
+    expect(sug([S([[100, 15], [100, 15], [100, 15]])])).toMatchObject({ state: 'up' }) // unrated counts as 8
+  })
+  it('offers the step early when past the middle and it felt easy', () => {
+    expect(sug([S([[100, 13], [100, 13], [100, 13]], 7)])).toMatchObject({ state: 'up', w: 102.5 })
+    expect(sug([S([[100, 13], [100, 13], [100, 13]], 8)])).toMatchObject({ state: 'reps', count: 14 })
+  })
+  it('holds after a ten', () => {
+    expect(sug([S([[100, 12], [100, 11], [100, 10]], 10)])).toEqual({ state: 'hold' })
+  })
+  it('drops one step after two short sessions, before any reset', () => {
+    const two = [S([[100, 10], [100, 9], [100, 9]], 9, '2026-10-24'), S([[100, 10], [100, 9], [100, 8]], 9)]
+    expect(sug(two)).toMatchObject({ state: 'drop', w: 97.5, count: 10, tag: 'drop' })
+    expect(sug(two, { stall: { sessions: 3, w: 100, reps: 10 } })).toMatchObject({ state: 'drop' })
+  })
+  it('resets two steps down when stalled', () => {
+    expect(sug([S([[100, 12], [100, 12], [100, 10]], 8)], { stall: { sessions: 3, w: 100, reps: 12 } })).toMatchObject({
+      state: 'reset',
+      w: 95,
+      count: 10,
+      tag: 'reset',
+      stall: 3,
+    })
+  })
+  it('lightens during a light week, whatever else is true', () => {
+    expect(sug([S([[100, 15], [100, 15], [100, 15]], 9)], { lightWeekRunning: true })).toEqual({
+      state: 'light',
+      tag: 'light',
+      w: 90,
+      count: 10,
+      sets: 3,
+    })
+    expect(
+      suggestNext({
+        ex: swing,
+        bells: [],
+        sessions: [toSession(mkSession('2026-10-31', [[16, 15]]))],
+        lightWeekRunning: true,
+        stall: null,
+      }),
+    ).toEqual({ state: 'light', tag: 'light', w: 16, count: 10, sets: 1 }) // one set halves to one, never zero
+  })
+  it('has nothing to say on a first session or for box jump', () => {
+    expect(sug([])).toBeNull()
+    expect(
+      suggestNext({
+        ex: boxJump,
+        bells: [],
+        sessions: [toSession(mkSession('2026-10-31', [[50, 5]]))],
+        lightWeekRunning: false,
+        stall: null,
+      }),
+    ).toBeNull()
+  })
+  it('turns text-only where there is no load to move', () => {
+    const base = { bells: [], lightWeekRunning: false }
+    expect(
+      suggestNext({ ...base, ex: swing, sessions: [toSession(mkSession('2026-10-31', [[32, 20], [32, 20]], 8))], stall: null }),
+    ).toEqual({ state: 'text', kicker: 'Top of the range', text: 'Try a bigger bell' })
+    expect(
+      suggestNext({
+        ...base,
+        ex: swing,
+        sessions: [toSession(mkSession('2026-10-31', [[8, 8], [8, 8]], 9))],
+        stall: { sessions: 3, w: 8, reps: 8 },
+      }),
+    ).toEqual({ state: 'text', kicker: 'Stalled 3 sessions', text: 'Repeat 8 × 8, 8' })
+    expect(
+      suggestNext({ ...base, ex: deadBug, sessions: [toSession(mkSession('2026-10-31', [[0, 12], [0, 12]], 8))], stall: null }),
+    ).toEqual({ state: 'text', kicker: 'Top of the range', text: 'Repeat 12, then add load' })
+    expect(
+      suggestNext({
+        ...base,
+        ex: plank,
+        sessions: [toSession(mkSession('2026-10-31', [[0, 60]], 8, { durationSec: true }))],
+        stall: null,
+      }),
+    ).toEqual({ state: 'text', kicker: 'Top of the range', text: 'Repeat 60s' })
+    expect(
+      suggestNext({ ...base, ex: deadBug, sessions: [toSession(mkSession('2026-10-31', [[0, 10], [0, 9]], 8))], stall: null }),
+    ).toMatchObject({ state: 'reps', w: 0, count: 10 })
+  })
+  it('steps timed lifts by five seconds and loaded timed lifts by a bell', () => {
+    const base = { bells: [], lightWeekRunning: false, stall: null }
+    expect(
+      suggestNext({ ...base, ex: carry, sessions: [toSession(mkSession('2026-10-31', [[24, 45], [24, 40]], 8, { durationSec: true }))] }),
+    ).toMatchObject({ state: 'reps', w: 24, count: 45 })
+    expect(
+      suggestNext({ ...base, ex: carry, sessions: [toSession(mkSession('2026-10-31', [[24, 60], [24, 60]], 8, { durationSec: true }))] }),
+    ).toMatchObject({ state: 'up', w: 28, count: 30 })
+  })
+  it('falls through to reps at the top of a reps-only lift that is not yet at the top', () => {
+    const one = (count: number, ex: Exercise = deadBug) =>
+      suggestNext({ ex, bells: [], sessions: [toSession(mkSession('2026-10-31', [[0, count], [0, count]], 7))], lightWeekRunning: false, stall: null })
+    expect(one(11)).toMatchObject({ state: 'reps', w: 0, count: 12 }) // past the middle, but not at the top
+  })
+  it('writes text for a stalled reps-only lift and a drop or reset with no load below', () => {
+    const base = { bells: [], lightWeekRunning: false }
+    expect(
+      suggestNext({
+        ...base,
+        ex: deadBug,
+        sessions: [toSession(mkSession('2026-10-31', [[0, 10], [0, 9]], 8))],
+        stall: { sessions: 4, w: 0, reps: 10 },
+      }),
+    ).toEqual({ state: 'text', kicker: 'Stalled 4 sessions', text: 'Repeat 10, then add load' })
+    const two = [
+      mkSession('2026-10-24', [[2.5, 9], [2.5, 9]], 9),
+      mkSession('2026-10-31', [[2.5, 9], [2.5, 8]], 9),
+    ].map(toSession)
+    expect(suggestNext({ ...base, ex: legPress, eq, sessions: two, stall: null })).toEqual({
+      state: 'text',
+      kicker: 'Two short',
+      text: 'Repeat 2.5 × 9, 8',
+    })
+  })
+})
+describe('lineFor', () => {
+  it('writes the spec copy', () => {
+    const last = S([[100, 12], [100, 11], [100, 10]], 10).rows
+    expect(lineFor(legPress, { state: 'reps', tag: 'reps', w: 100, count: 12, sets: 3 }, last)).toEqual({ kicker: 'Feeling good?', text: '100 × 12' })
+    expect(lineFor(legPress, { state: 'hold' }, last)).toEqual({ kicker: 'Hold', text: 'Last one was a 10. Repeat 100 × 12, 11, 10' })
+    expect(lineFor(legPress, { state: 'drop', tag: 'drop', w: 97.5, count: 10, sets: 3 }, last)).toEqual({ kicker: 'Two short', text: 'Try 97.5 × 10' })
+    expect(lineFor(legPress, { state: 'reset', tag: 'reset', w: 95, count: 10, sets: 3, stall: 3 }, last)).toEqual({ kicker: 'Stalled 3 sessions', text: 'Reset to 95 × 10' })
+    expect(lineFor(dbBench, { state: 'light', tag: 'light', w: 16, count: 8, sets: 2 }, last)).toEqual({ kicker: 'Light week', text: '16 ph × 8, two sets' })
+    expect(lineFor(legPress, { state: 'light', tag: 'light', w: 90, count: 10, sets: 3 }, last)).toEqual({ kicker: 'Light week', text: '90 × 10' })
+  })
+  it('passes text suggestions through and says two sets on a halved bell or reps-only lift', () => {
+    const t: Suggestion = { state: 'text', kicker: 'Top of the range', text: 'Try a bigger bell' }
+    expect(lineFor(swing, t, [])).toEqual({ kicker: 'Top of the range', text: 'Try a bigger bell' })
+    expect(lineFor(swing, { state: 'light', tag: 'light', w: 16, count: 10, sets: 2 }, [])).toEqual({ kicker: 'Light week', text: '16 × 10, two sets' })
+    expect(lineFor(deadBug, { state: 'light', tag: 'light', w: 0, count: 8, sets: 6 }, [])).toEqual({ kicker: 'Light week', text: 'BW × 8, 6 sets' })
   })
 })
