@@ -49,6 +49,7 @@ function fixture(): GymData {
     cardio: [{ id: 'c1', workoutId: 'c29', modality: 'treadmill_4x4', durationMin: 38, speedKph: 6.2, inclinePct: 10, avgHr: 148, maxHr: 171, rpe: 8,
       intervals: [{ workMin: 4, speedKph: 6.2, inclinePct: 10, peakHr: 165 }, { workMin: 4, speedKph: 6.2, inclinePct: 10, peakHr: 168 }, { workMin: 4, speedKph: 6.5, inclinePct: 10, peakHr: 170 }, { workMin: 4, speedKph: 6.2, inclinePct: 10, peakHr: 171 }] }],
     bodyweight: [{ id: 'b1', date: '2026-09-29', kg: 110.6 }, { id: 'b2', date: '2026-10-27', kg: 109.4, waistCm: 108 }],
+    coach: { lightWeeks: [] },
   }
 }
 

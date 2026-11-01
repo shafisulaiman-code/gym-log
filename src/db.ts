@@ -4,6 +4,7 @@ import { staleSeedIds } from './seedPrune'
 import type {
   Bodyweight,
   CardioSession,
+  CoachRecord,
   Equipment,
   Exercise,
   Outlet,
@@ -21,6 +22,7 @@ class GymDB extends Dexie {
   cardio_sessions!: EntityTable<CardioSession, 'id'>
   bodyweight!: EntityTable<Bodyweight, 'id'>
   sync_log!: EntityTable<SyncLog, 'id'>
+  coach!: EntityTable<CoachRecord, 'key'>
 
   constructor() {
     super('gymlog')
@@ -47,6 +49,18 @@ class GymDB extends Dexie {
       cardio_sessions: 'id, workoutId, modality',
       bodyweight: 'id, date',
       sync_log: 'id, workoutId',
+    })
+    // v3: coach key-value table (light weeks, snooze). SetRow.coach added, no index.
+    this.version(3).stores({
+      outlets: 'id',
+      exercises: 'id, category',
+      equipment: 'id, exerciseId, outletId, [exerciseId+outletId]',
+      workouts: 'id, startedAt, outletId, type',
+      sets: 'id, workoutId, exerciseId, equipmentId',
+      cardio_sessions: 'id, workoutId, modality',
+      bodyweight: 'id, date',
+      sync_log: 'id, workoutId',
+      coach: 'key',
     })
   }
 }

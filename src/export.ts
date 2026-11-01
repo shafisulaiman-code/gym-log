@@ -1,5 +1,6 @@
 import { db } from './db'
-import type { Bodyweight, CardioSession, Equipment, Exercise, Outlet, SetRow, Workout } from './types'
+import { loadCoachState } from './coachStore'
+import type { Bodyweight, CardioSession, CoachState, Equipment, Exercise, Outlet, SetRow, Workout } from './types'
 import { sgDate, sgIso } from './util'
 import { weeklyFileName, weeklySummary } from './weekly'
 import type { Week } from './week'
@@ -13,10 +14,11 @@ export type GymData = {
   sets: SetRow[]
   cardio: CardioSession[]
   bodyweight: Bodyweight[]
+  coach: CoachState
 }
 
 export async function loadAll(): Promise<GymData> {
-  const [outlets, exercises, equipment, workouts, sets, cardio, bodyweight] = await Promise.all([
+  const [outlets, exercises, equipment, workouts, sets, cardio, bodyweight, coach] = await Promise.all([
     db.outlets.toArray(),
     db.exercises.toArray(),
     db.equipment.toArray(),
@@ -24,12 +26,13 @@ export async function loadAll(): Promise<GymData> {
     db.sets.toArray(),
     db.cardio_sessions.toArray(),
     db.bodyweight.orderBy('date').toArray(),
+    loadCoachState(),
   ])
-  return { outlets, exercises, equipment, workouts, sets, cardio, bodyweight }
+  return { outlets, exercises, equipment, workouts, sets, cardio, bodyweight, coach }
 }
 
 export async function buildExport() {
-  const { outlets, exercises, equipment, workouts, sets, cardio, bodyweight } = await loadAll()
+  const { outlets, exercises, equipment, workouts, sets, cardio, bodyweight, coach } = await loadAll()
   const outletName = (id: string) => outlets.find((o) => o.id === id)?.name ?? id
   const exerciseName = (id: string) => exercises.find((e) => e.id === id)?.name ?? id
   const equipmentLabel = (id?: string) => equipment.find((e) => e.id === id)?.label ?? null
@@ -64,6 +67,7 @@ export async function buildExport() {
             warmup: s.isWarmup,
             rpe: s.rpe,
             pain: s.painFlag,
+            coach: s.coach,
             completedAt: s.completedAt,
           })),
         })),
@@ -99,6 +103,7 @@ export async function buildExport() {
     workouts: strength,
     cardio: cardioOut,
     bodyweight: bodyweight.map((b) => ({ date: b.date, kg: b.kg, waistCm: b.waistCm })),
+    coach,
   }
 }
 

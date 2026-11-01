@@ -57,6 +57,9 @@ export interface Workout {
   notes?: string
 }
 
+// The coaching nudge a set was logged from.
+export type CoachTag = 'up' | 'reps' | 'drop' | 'reset' | 'light'
+
 export interface SetRow {
   id: string
   workoutId: string
@@ -73,6 +76,7 @@ export interface SetRow {
   completedAt?: string
   seq: number // creation order, used to order cards and rows
   ghost?: boolean // suggested from last session, not yet confirmed or edited
+  coach?: CoachTag // written by the nudge tap (Phase 3)
 }
 
 export type CardioModality = 'treadmill_z2' | 'treadmill_4x4' | 'bike'
@@ -104,6 +108,10 @@ export interface Bodyweight {
   kg: number
   waistCm?: number
 }
+
+export type LightWeek = { startedAt: string; endsAt: string } // ISO +08:00
+export type CoachState = { lightWeeks: LightWeek[]; lightWeekSnoozedUntil?: string }
+export type CoachRecord = { key: 'state' } & CoachState
 
 export interface SyncLog {
   id: string
